@@ -87,17 +87,17 @@ export class TossHttpClient {
     async refundPayment(paymentKey: string, body: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
         try {
             if (body.cancelAmount === undefined) {
-                body.cancelAmount = 0;
+                throw new Error("cancelAmount is required");
             }
 
             let newInput: ITossPaymentCancel.ICreate = {
-                paymentKey: body.paymentKey,
+                paymentKey: paymentKey,
                 cancelReason: body.cancelReason,
                 cancelAmount: body.cancelAmount,
             }
 
             const response = await axios.post<ITossPayment>(
-                `${this.connection.host}/v1/payments/${paymentKey}/refund`,
+                `${this.connection.host}/v1/payments/${paymentKey}/cancel`,
                 newInput,
                 {
                     headers: {

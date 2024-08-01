@@ -110,14 +110,18 @@ class TossProviderService extends AbstractPaymentProcessor {
     ): Promise<
         PaymentProcessorError | PaymentProcessorSessionResponse["session_data"]
     > {
-        const paymentKey = paymentSessionData.paymentKey as string
+        try {
+            const paymentKey = paymentSessionData.paymentKey as string
 
-        await this.toss_.cancelPayment(paymentKey, {
-            cancelReason: "-",
-            paymentKey: paymentKey,
-        })
+            await this.toss_.cancelPayment(paymentKey, {
+                cancelReason: "-",
+                paymentKey: paymentKey,
+            })
 
-        return paymentSessionData
+            return paymentSessionData
+        } catch (error) {
+            return this.buildError("An error occurred in cancelPayment", error)
+        }
     }
 
     async capturePayment(
