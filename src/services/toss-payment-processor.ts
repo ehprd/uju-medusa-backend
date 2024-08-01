@@ -124,7 +124,10 @@ class TossProviderService extends AbstractPaymentProcessor {
         PaymentProcessorError | PaymentProcessorSessionResponse["session_data"]
     > {
         try {
-            return paymentSessionData
+            var status = await this.getPaymentStatus(paymentSessionData)
+            if (status === PaymentSessionStatus.AUTHORIZED) {
+                return paymentSessionData
+            }
         } catch (error) {
             return this.buildError("An error occurred in capturePayment", error)
         }
