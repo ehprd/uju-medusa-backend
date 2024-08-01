@@ -24,7 +24,7 @@ export class TossHttpClient {
 
     async confirmWidgetPayment(paymentKey: string, body: ITossPayment.IApproval): Promise<ITossPayment> {
         try {
-            const payment: ITossPayment = await this.approve(
+            const payment: ITossPayment = await this.confirmWidget_(
                 this.connection,
                 paymentKey,
                 body
@@ -37,7 +37,7 @@ export class TossHttpClient {
         }
     }
 
-    async approve(connection: IConnection, paymentKey: string, input: ITossPayment.IApproval): Promise<ITossPayment> {
+    async confirmWidget_(connection: IConnection, paymentKey: string, input: ITossPayment.IApproval): Promise<ITossPayment> {
         const response = await axios.post<ITossPayment>(
             `${connection.host}/v1/payments/${paymentKey}`,
             input,
@@ -53,7 +53,7 @@ export class TossHttpClient {
 
     async retrievePayment(paymentKey: string): Promise<ITossPayment> {
         try {
-            const payment: ITossPayment = await this.at(
+            const payment: ITossPayment = await this.retrieve_(
                 this.connection,
                 paymentKey,
             );
@@ -65,7 +65,7 @@ export class TossHttpClient {
         }
     }
 
-    async at(connection: IConnection, paymentKey: string): Promise<ITossPayment> {
+    async retrieve_(connection: IConnection, paymentKey: string): Promise<ITossPayment> {
         const response = await axios.get<ITossPayment>(
             `${connection.host}/v1/payments/${paymentKey}`,
             {
@@ -79,7 +79,7 @@ export class TossHttpClient {
 
     async cancelPayment(paymentKey: string, body: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
         try {
-            const payment: ITossPayment = await this.cancel(
+            const payment: ITossPayment = await this.cancel_(
                 this.connection,
                 paymentKey,
                 body
@@ -92,7 +92,7 @@ export class TossHttpClient {
         }
     }
 
-    async cancel(connection: IConnection, paymentKey: string, input: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
+    async cancel_(connection: IConnection, paymentKey: string, input: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
         let newInput:  ITossPaymentCancel. ICreate = {
             paymentKey: input.paymentKey,
             cancelReason: input.cancelReason,
@@ -112,7 +112,7 @@ export class TossHttpClient {
 
     async refundPayment(paymentKey: string, body: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
         try {
-            const payment: ITossPayment = await this.refund(
+            const payment: ITossPayment = await this.refund_(
                 this.connection,
                 paymentKey,
                 body
@@ -125,7 +125,7 @@ export class TossHttpClient {
         }
     }
 
-    async refund(connection: IConnection, paymentKey: string, input: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
+    async refund_(connection: IConnection, paymentKey: string, input: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
         if(input.cancelAmount === undefined) {
             input.cancelAmount = 0;
         }
