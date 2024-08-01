@@ -1,4 +1,3 @@
-import {Logger} from "@medusajs/medusa"
 import toss, {IConnection} from "toss-payments-server-api";
 import {ITossPayment} from "toss-payments-server-api/lib/structures/ITossPayment";
 import {ITossPaymentCancel} from "toss-payments-server-api/lib/structures/ITossPaymentCancel";
@@ -24,127 +23,95 @@ export class TossHttpClient {
 
     async confirmWidgetPayment(paymentKey: string, body: ITossPayment.IApproval): Promise<ITossPayment> {
         try {
-            const payment: ITossPayment = await this.confirmWidget_(
-                this.connection,
-                paymentKey,
-                body
+            const response = await axios.post<ITossPayment>(
+                `${this.connection.host}/v1/payments/${paymentKey}`,
+                body,
+                {
+                    headers: {
+                        "Authorization": encryptedWidgetSecretKey,
+                        "Content-Type": "application/json",
+                    },
+                }
             );
-            console.log("Payment Confirmation Success:", payment);
-            return payment;
+
+            return response.data;
         } catch (error) {
             console.error("Payment Confirmation Error:", error.response.data);
             throw error.response.data;
         }
     }
 
-    async confirmWidget_(connection: IConnection, paymentKey: string, input: ITossPayment.IApproval): Promise<ITossPayment> {
-        const response = await axios.post<ITossPayment>(
-            `${connection.host}/v1/payments/${paymentKey}`,
-            input,
-            {
-                headers: {
-                    "Authorization": encryptedWidgetSecretKey,
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-        return response.data;
-    }
-
     async retrievePayment(paymentKey: string): Promise<ITossPayment> {
         try {
-            const payment: ITossPayment = await this.retrieve_(
-                this.connection,
-                paymentKey,
+            const response = await axios.get<ITossPayment>(
+                `${this.connection.host}/v1/payments/${paymentKey}`,
+                {
+                    headers: {
+                        "Authorization": encryptedWidgetSecretKey,
+                    },
+                }
             );
-            console.log("Payment Retrieval Success:", payment);
-            return payment;
+            return response.data;
         } catch (error) {
             console.error("Payment Retrieval Error:", error.response.data);
             throw error.response.data;
         }
     }
 
-    async retrieve_(connection: IConnection, paymentKey: string): Promise<ITossPayment> {
-        const response = await axios.get<ITossPayment>(
-            `${connection.host}/v1/payments/${paymentKey}`,
-            {
-                headers: {
-                    "Authorization": encryptedWidgetSecretKey,
-                },
-            }
-        );
-        return response.data;
-    }
-
     async cancelPayment(paymentKey: string, body: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
         try {
-            const payment: ITossPayment = await this.cancel_(
-                this.connection,
-                paymentKey,
-                body
-            )
-            console.log("Payment Cancellation Success:", payment);
-            return payment;
+            let paymentKey = body.paymentKey;
+
+            let newInput: ITossPaymentCancel.ICreate = {
+                paymentKey: body.paymentKey,
+                cancelReason: body.cancelReason,
+            }
+
+            const response = await axios.post<ITossPayment>(
+                `${this.connection.host}/v1/payments/${paymentKey}/cancel`,
+                newInput,
+                {
+                    headers: {
+                        "Authorization": encryptedWidgetSecretKey,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+            return response.data;
         } catch (error) {
             console.error("Payment Cancellation Error:", error.response.data);
             throw error.response.data;
         }
     }
 
-    async cancel_(connection: IConnection, paymentKey: string, input: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
-        let newInput:  ITossPaymentCancel. ICreate = {
-            paymentKey: input.paymentKey,
-            cancelReason: input.cancelReason,
-        }
-        const response = await axios.post<ITossPayment>(
-            `${connection.host}/v1/payments/${paymentKey}/cancel`,
-            newInput,
-            {
-                headers: {
-                    "Authorization": encryptedWidgetSecretKey,
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-        return response.data;
-    }
-
     async refundPayment(paymentKey: string, body: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
         try {
-            const payment: ITossPayment = await this.refund_(
-                this.connection,
-                paymentKey,
-                body
-            )
-            console.log("Payment Refund Success:", payment);
-            return payment;
+            if (body.cancelAmount === undefined) {
+                body.cancelAmount = 0;
+            }
+
+            let newInput: ITossPaymentCancel.ICreate = {
+                paymentKey: body.paymentKey,
+                cancelReason: body.cancelReason,
+                cancelAmount: body.cancelAmount,
+            }
+
+            const response = await axios.post<ITossPayment>(
+                `${this.connection.host}/v1/payments/${paymentKey}/refund`,
+                newInput,
+                {
+                    headers: {
+                        "Authorization": encryptedWidgetSecretKey,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            return response.data;
         } catch (error) {
             console.error("Payment Refund Error:", error.response.data);
             throw error.response.data;
         }
-    }
-
-    async refund_(connection: IConnection, paymentKey: string, input: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
-        if(input.cancelAmount === undefined) {
-            input.cancelAmount = 0;
-        }
-        let newInput:  ITossPaymentCancel. ICreate = {
-            paymentKey: input.paymentKey,
-            cancelReason: input.cancelReason,
-            cancelAmount: input.cancelAmount,
-        }
-        const response = await axios.post<ITossPayment>(
-            `${connection.host}/v1/payments/${paymentKey}/refund`,
-            newInput,
-            {
-                headers: {
-                    "Authorization": encryptedWidgetSecretKey,
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-        return response.data;
     }
 }
 
