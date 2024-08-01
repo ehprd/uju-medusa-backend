@@ -11,8 +11,7 @@ import {
 import {Logger} from "@medusajs/types"
 import {MedusaError} from "@medusajs/utils"
 import {TossHttpClient} from "../core/toss-client";
-import {PaymentStatus, PurchaseUnits, TossOrder, TossOrderStatus} from "../core/types";
-import {UUID} from "typeorm/driver/mongodb/bson.typings";
+import {PaymentStatus} from "../core/types";
 
 class TossProviderService extends AbstractPaymentProcessor {
     static identifier = "toss"
@@ -38,14 +37,11 @@ class TossProviderService extends AbstractPaymentProcessor {
     ): Promise<PaymentSessionStatus> {
         let order
         try {
-            order = (await this.retrievePayment(
-                paymentSessionData
-            )) as TossOrder
-        } catch(e){
-            if(e.code=== "ALREADY_PROCESSED_PAYMENT"){
-                return PaymentSessionStatus.AUTHORIZED
-            }
-            throw e
+            const {paymentKey} = paymentSessionData
+            order = await this.toss_.retrievePayment(paymentKey as string)
+
+        } catch (e) {
+            return PaymentSessionStatus.PENDING
         }
         switch (order.status) {
             case PaymentStatus.READY:
@@ -68,7 +64,6 @@ class TossProviderService extends AbstractPaymentProcessor {
     async initiatePayment(
         context: PaymentProcessorContext
     ): Promise<PaymentProcessorError | PaymentProcessorSessionResponse> {
-        console.log('initiatePayment', context)
         const {amount} = context
 
         return {
@@ -92,14 +87,20 @@ class TossProviderService extends AbstractPaymentProcessor {
         const {amount, orderId, paymentKey} = paymentSessionData
 
         try {
-            var order = await this.toss_.confirmWidgetPayment(paymentKey as string, {
-                amount: amount as number,
-                orderId: orderId as string,
-            })
+            let order
+            try {
+                order = await this.toss_.confirmWidgetPayment(paymentKey as string, {
+                    amount: amount as number,
+                    orderId: orderId as string,
+                })
+            } catch (e){
+                console.error("Error in authorizePayment", e)
+            }
 
-            var stat = await this.getPaymentStatus(paymentSessionData)
+            var status = await this.getPaymentStatus(paymentSessionData)
+
             return {
-                data: { session_data: order }, status: stat
+                data: paymentSessionData, status: status
             }
         } catch (error) {
             return this.buildError("An error occurred in authorizePayment", error)
@@ -124,9 +125,8 @@ class TossProviderService extends AbstractPaymentProcessor {
     ): Promise<
         PaymentProcessorError | PaymentProcessorSessionResponse["session_data"]
     > {
-        console.log('capturePayment', paymentSessionData)
         try {
-            return await this.retrievePayment(paymentSessionData)
+            return paymentSessionData
         } catch (error) {
             return this.buildError("An error occurred in capturePayment", error)
         }
@@ -141,7 +141,6 @@ class TossProviderService extends AbstractPaymentProcessor {
     ): Promise<
         PaymentProcessorError | PaymentProcessorSessionResponse["session_data"]
     > {
-        console.log('deletePayment', paymentSessionData)
         return paymentSessionData
     }
 
@@ -151,7 +150,6 @@ class TossProviderService extends AbstractPaymentProcessor {
     ): Promise<
         PaymentProcessorError | PaymentProcessorSessionResponse["session_data"]
     > {
-        console.log('refundPayment', paymentSessionData, refundAmount)
         try {
             const paymentKey = paymentSessionData.paymentKey as string
 
@@ -160,7 +158,7 @@ class TossProviderService extends AbstractPaymentProcessor {
                 paymentKey: paymentKey,
             })
 
-            return await this.retrievePayment(paymentSessionData)
+            return paymentSessionData
         } catch (error) {
             return this.buildError("An error occurred in refundPayment", error)
         }

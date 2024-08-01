@@ -17,21 +17,15 @@ export class TossHttpClient {
             // host: "http://127.0.0.1:30771", // FAKE-SERVER
             host: "https://api.tosspayments.com", // REAL-SERVER
             headers: {
-                Authorization: encryptedApiSecretKey
+                "Authorization": encryptedWidgetSecretKey
             }
         };
     }
 
     async confirmWidgetPayment(paymentKey: string, body: ITossPayment.IApproval): Promise<ITossPayment> {
         try {
-            const connection = {
-                ...this.connection,
-                headers: {
-                    "Authorization": encryptedWidgetSecretKey
-                }
-            }
             const payment: ITossPayment = await this.approve(
-                connection,
+                this.connection,
                 paymentKey,
                 body
             );
@@ -49,7 +43,7 @@ export class TossHttpClient {
             input,
             {
                 headers: {
-                    ...connection.headers,
+                    "Authorization": encryptedWidgetSecretKey,
                     "Content-Type": "application/json",
                 },
             }
@@ -75,7 +69,10 @@ export class TossHttpClient {
         const response = await axios.get<ITossPayment>(
             `${connection.host}/v1/payments/${paymentKey}`,
             {
-                headers: connection.headers,
+                headers: {
+                    "Authorization": encryptedWidgetSecretKey,
+                    "Content-Type": "application/json",
+                },
             }
         );
         return response.data;
@@ -102,7 +99,7 @@ export class TossHttpClient {
             input,
             {
                 headers: {
-                    ...connection.headers,
+                    "Authorization": encryptedWidgetSecretKey,
                     "Content-Type": "application/json",
                 },
             }
