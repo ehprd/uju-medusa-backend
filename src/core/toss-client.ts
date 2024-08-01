@@ -1,7 +1,8 @@
 import {Logger} from "@medusajs/medusa"
-import toss from "toss-payments-server-api";
+import toss, {IConnection} from "toss-payments-server-api";
 import {ITossPayment} from "toss-payments-server-api/lib/structures/ITossPayment";
 import {ITossPaymentCancel} from "toss-payments-server-api/lib/structures/ITossPaymentCancel";
+import axios from "axios";
 
 const widgetSecretKey = "test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6";
 const apiSecretKey = "test_sk_zXLkKEypNArWmo50nX3lmeaxYG5R";
@@ -23,9 +24,14 @@ export class TossHttpClient {
 
     async confirmWidgetPayment(paymentKey: string, body: ITossPayment.IApproval): Promise<ITossPayment> {
         try {
-            const payment: ITossPayment = await toss.functional.v1.payments.approve
-            (
-                this.connection,
+            const connection = {
+                ...this.connection,
+                headers: {
+                    "Authorization": encryptedWidgetSecretKey
+                }
+            }
+            const payment: ITossPayment = await this.approve(
+                connection,
                 paymentKey,
                 body
             );
@@ -37,10 +43,23 @@ export class TossHttpClient {
         }
     }
 
+    async approve(connection: IConnection, paymentKey: string, input: ITossPayment.IApproval): Promise<ITossPayment> {
+        const response = await axios.post<ITossPayment>(
+            `${connection.host}/v1/payments/${paymentKey}`,
+            input,
+            {
+                headers: {
+                    ...connection.headers,
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+        return response.data;
+    }
+
     async retrievePayment(paymentKey: string): Promise<ITossPayment> {
         try {
-            const payment: ITossPayment = await toss.functional.v1.payments.at
-            (
+            const payment: ITossPayment = await this.at(
                 this.connection,
                 paymentKey,
             );
@@ -52,9 +71,19 @@ export class TossHttpClient {
         }
     }
 
+    async at(connection: IConnection, paymentKey: string): Promise<ITossPayment> {
+        const response = await axios.get<ITossPayment>(
+            `${connection.host}/v1/payments/${paymentKey}`,
+            {
+                headers: connection.headers,
+            }
+        );
+        return response.data;
+    }
+
     async cancelPayment(paymentKey: string, body: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
         try {
-            const payment: ITossPayment = await toss.functional.v1.payments.cancel(
+            const payment: ITossPayment = await this.cancel(
                 this.connection,
                 paymentKey,
                 body
@@ -65,6 +94,20 @@ export class TossHttpClient {
             console.error("Payment Cancellation Error:", error.response.data);
             throw error.response.data;
         }
+    }
+
+    async cancel(connection: IConnection, paymentKey: string, input: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
+        const response = await axios.post<ITossPayment>(
+            `${connection.host}/v1/payments/${paymentKey}/cancel`,
+            input,
+            {
+                headers: {
+                    ...connection.headers,
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+        return response.data;
     }
 }
 

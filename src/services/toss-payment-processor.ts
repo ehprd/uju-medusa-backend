@@ -83,23 +83,20 @@ class TossProviderService extends AbstractPaymentProcessor {
     > {
         console.log('authorizePayment', paymentSessionData, context)
         const {amount, orderId, paymentKey} = paymentSessionData
+
         try {
             var order = await this.toss_.confirmWidgetPayment(paymentKey as string, {
                 amount: amount as number,
                 orderId: orderId as string,
             })
-            var stat = await this.getPaymentStatus(paymentSessionData)
 
+            var stat = await this.getPaymentStatus(paymentSessionData)
             return {
-                data: this.convertToJSONCompatible(order), status: stat
+                data: { session_data: order }, status: stat
             }
         } catch (error) {
             return this.buildError("An error occurred in authorizePayment", error)
         }
-    }
-
-    convertToJSONCompatible(obj: any): Record<string, unknown> {
-        return JSON.parse(JSON.stringify(obj));
     }
 
     /**
