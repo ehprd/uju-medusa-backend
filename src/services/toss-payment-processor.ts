@@ -105,16 +105,18 @@ class TossProviderService extends AbstractPaymentProcessor {
         }
     }
 
-    /**
-     * Toss does not provide such feature
-     * @param paymentSessionData
-     */
     async cancelPayment(
         paymentSessionData: Record<string, unknown>
     ): Promise<
         PaymentProcessorError | PaymentProcessorSessionResponse["session_data"]
     > {
-        console.log('cancelPayment', paymentSessionData)
+        const paymentKey = paymentSessionData.paymentKey as string
+
+        await this.toss_.cancelPayment(paymentKey, {
+            cancelReason: "-",
+            paymentKey: paymentKey,
+        })
+
         return paymentSessionData
     }
 
@@ -127,6 +129,8 @@ class TossProviderService extends AbstractPaymentProcessor {
             var status = await this.getPaymentStatus(paymentSessionData)
             if (status === PaymentSessionStatus.AUTHORIZED) {
                 return paymentSessionData
+            } else {
+                return this.buildError("Payment not authorized", new Error("Payment not authorized"))
             }
         } catch (error) {
             return this.buildError("An error occurred in capturePayment", error)
@@ -154,8 +158,9 @@ class TossProviderService extends AbstractPaymentProcessor {
         try {
             const paymentKey = paymentSessionData.paymentKey as string
 
-            await this.toss_.cancelPayment(paymentKey, {
-                cancelReason: "Refund",
+            await this.toss_.refundPayment(paymentKey, {
+                cancelReason: "-",
+                cancelAmount: refundAmount,
                 paymentKey: paymentKey,
             })
 

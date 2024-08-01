@@ -93,9 +93,50 @@ export class TossHttpClient {
     }
 
     async cancel(connection: IConnection, paymentKey: string, input: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
+        let newInput:  ITossPaymentCancel. ICreate = {
+            paymentKey: input.paymentKey,
+            cancelReason: input.cancelReason,
+        }
         const response = await axios.post<ITossPayment>(
             `${connection.host}/v1/payments/${paymentKey}/cancel`,
-            input,
+            newInput,
+            {
+                headers: {
+                    "Authorization": encryptedWidgetSecretKey,
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+        return response.data;
+    }
+
+    async refundPayment(paymentKey: string, body: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
+        try {
+            const payment: ITossPayment = await this.refund(
+                this.connection,
+                paymentKey,
+                body
+            )
+            console.log("Payment Refund Success:", payment);
+            return payment;
+        } catch (error) {
+            console.error("Payment Refund Error:", error.response.data);
+            throw error.response.data;
+        }
+    }
+
+    async refund(connection: IConnection, paymentKey: string, input: ITossPaymentCancel.ICreate): Promise<ITossPayment> {
+        if(input.cancelAmount === undefined) {
+            input.cancelAmount = 0;
+        }
+        let newInput:  ITossPaymentCancel. ICreate = {
+            paymentKey: input.paymentKey,
+            cancelReason: input.cancelReason,
+            cancelAmount: input.cancelAmount,
+        }
+        const response = await axios.post<ITossPayment>(
+            `${connection.host}/v1/payments/${paymentKey}/refund`,
+            newInput,
             {
                 headers: {
                     "Authorization": encryptedWidgetSecretKey,
