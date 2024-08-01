@@ -46,6 +46,7 @@
     "medusa-payment-stripe": "6.0.10",
     "medusa-plugin-auth": "^1.11.1",
     "prism-react-renderer": "^2.0.4",
+    "toss-payments-server-api": "^8.1.0",
     "typeorm": "0.3.16"
   },
   "devDependencies": {
