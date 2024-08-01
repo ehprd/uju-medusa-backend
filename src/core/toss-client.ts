@@ -71,7 +71,6 @@ export class TossHttpClient {
             {
                 headers: {
                     "Authorization": encryptedWidgetSecretKey,
-                    "Content-Type": "application/json",
                 },
             }
         );
