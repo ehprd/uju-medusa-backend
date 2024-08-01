@@ -36,10 +36,17 @@ class TossProviderService extends AbstractPaymentProcessor {
     async getPaymentStatus(
         paymentSessionData: Record<string, unknown>
     ): Promise<PaymentSessionStatus> {
-        const order = (await this.retrievePayment(
-            paymentSessionData
-        )) as TossOrder
-
+        let order
+        try {
+            order = (await this.retrievePayment(
+                paymentSessionData
+            )) as TossOrder
+        } catch(e){
+            if(e.code=== "ALREADY_PROCESSED_PAYMENT"){
+                return PaymentSessionStatus.AUTHORIZED
+            }
+            throw e
+        }
         switch (order.status) {
             case PaymentStatus.READY:
                 return PaymentSessionStatus.PENDING
