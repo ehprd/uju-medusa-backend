@@ -108,6 +108,12 @@ const plugins = [
       auth_webhook_id: process.env.PAYPAL_AUTH_WEBHOOK_ID,
     },
   },
+  {
+    resolve: `medusa-plugin-custom-dashboard`,
+    options: {
+      enableUI: true,
+    },
+  },
 ];
 
 const modules = {

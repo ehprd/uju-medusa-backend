@@ -45,6 +45,7 @@
     "medusa-payment-paypal": "^6.0.4",
     "medusa-payment-stripe": "6.0.10",
     "medusa-plugin-auth": "^1.11.1",
+    "medusa-plugin-custom-dashboard": "^0.0.2",
     "prism-react-renderer": "^2.0.4",
     "toss-payments-server-api": "^8.1.0",
     "typeorm": "0.3.16"

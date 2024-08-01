@@ -91,11 +91,15 @@ class TossProviderService extends AbstractPaymentProcessor {
             var stat = await this.getPaymentStatus(paymentSessionData)
 
             return {
-                data: {order}, status: stat
+                data: this.convertToJSONCompatible(order), status: stat
             }
         } catch (error) {
             return this.buildError("An error occurred in authorizePayment", error)
         }
+    }
+
+    convertToJSONCompatible(obj: any): Record<string, unknown> {
+        return JSON.parse(JSON.stringify(obj));
     }
 
     /**
