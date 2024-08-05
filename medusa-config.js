@@ -67,7 +67,7 @@ const plugins = [
       {
         type: "google",
         // strict: "all", // or "none" or "store" or "admin"
-        strict: "none",
+        strict: "store",
         identifier: "google",
         clientID: GoogleClientId,
         clientSecret: GoogleClientSecret,
@@ -89,7 +89,7 @@ const plugins = [
           failureRedirect: `${STORE_URL}/login`,
           // The success redirect can be overriden from the client by adding a query param `?redirectTo=your_url` to the auth url
           // This query param will have the priority over this configuration
-          successRedirect: `${STORE_URL}/`
+          successRedirect: `${STORE_URL}/google/`
           // authPath: '/store/auth/google',
           // authCallbackPath: '/store/auth/google/cb',
           // expiresIn: 24 * 60 * 60 * 1000,
