@@ -115,6 +115,14 @@ const plugins = [
       enableUI: true,
     },
   },
+  {
+    resolve: `medusa-plugin-sendgrid`,
+    options: {
+      api_key: process.env.SENDGRID_API_KEY,
+      from: process.env.SENDGRID_FROM,
+      order_placed_template: process.env.SENDGRID_ORDER_PLACED_ID,
+    },
+  },
 ];
 
 const modules = {
@@ -148,4 +156,8 @@ module.exports = {
   projectConfig,
   plugins,
   modules,
+  featureFlags: {
+    product_categories:true,
+    tax_inclusive_pricing: true,
+  },
 };
