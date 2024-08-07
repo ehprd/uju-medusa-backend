@@ -5,16 +5,17 @@ import {
     defaultStoreCartFields,
     defaultStoreCartRelations,
     IdempotencyKey,
-    IdempotencyKeyService, MedusaRequest, MedusaResponse, validator
+    IdempotencyKeyService, LineItem, LineItemService, MedusaRequest, MedusaResponse, validator
 } from "@medusajs/medusa";
 import {initializeIdempotencyRequest} from "@medusajs/medusa/dist/utils/idempotency";
 import {
-    addOrUpdateLineItem,
     CreateLineItemSteps, setPaymentSessions, setVariantAvailability
 } from "@medusajs/medusa/dist/api/routes/store/carts/create-line-item/utils/handler-steps";
+import {featureFlagRouter} from "@medusajs/medusa/dist/loaders/feature-flags";
 
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
     const {id} = req.params
+    console.log(id)
 
     const customerId: string | undefined = req.user?.customer_id
     const validated = await validator(StorePostCartsCartLineItemsReq, req.body)
@@ -167,4 +168,39 @@ export class StorePostCartsCartLineItemsReq {
 
     @IsOptional()
     metadata?: Record<string, unknown> | undefined
+}
+
+export async function addOrUpdateLineItem(
+    {
+        cartId,
+        container,
+        manager,
+        data,
+    }
+) {
+    const cartService: CartService = container.resolve("cartService")
+    const lineItemService: LineItemService = container.resolve("lineItemService")
+
+    const cart = await cartService.retrieve(cartId, {
+        select: ["id", "region_id", "customer_id"],
+    })
+
+    const line: LineItem = await lineItemService
+        .withTransaction(manager)
+        .generate(data.variant_id, cart.region_id, data.quantity, {
+            customer_id: data.customer_id || cart.customer_id,
+            metadata: data.metadata,
+        })
+
+    line.unit_price = 123345
+    line.quantity = 11
+
+    await manager.transaction(async (transactionManager) => {
+        const txCartService = cartService.withTransaction(transactionManager)
+
+        await txCartService.addOrUpdateLineItems(cart.id, line, {
+            validateSalesChannels:
+                featureFlagRouter.isFeatureEnabled("sales_channels"),
+        })
+    })
 }
