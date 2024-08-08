@@ -1,19 +1,22 @@
 // src/services/rental-product.ts
 import {
     TransactionBaseService,
-    FindConfig,
-    Selector,
+    ProductService,
 } from "@medusajs/medusa"
-import {EntityManager, FindOneOptions} from "typeorm"
-import {ProductService} from "@medusajs/medusa"
-import {MedusaError} from "medusa-core-utils"
+import { EntityManager } from "typeorm"
 import {RentalProduct} from "../models/rental_product";
+import {generateEntityId} from "@medusajs/utils";
 
 type CreateRentalProductInput = {
     product_id: string
     short_term_rate: number
     medium_term_rate: number
     long_term_rate: number
+    rental_periods?: {
+        short_term: { min: number; max: number }
+        medium_term: { min: number; max: number }
+        long_term: { min: number }
+    }
 }
 
 class RentalProductService extends TransactionBaseService {
@@ -27,49 +30,61 @@ class RentalProductService extends TransactionBaseService {
     }
 
     async create(data: CreateRentalProductInput): Promise<RentalProduct> {
-        return await this.atomicPhase_(async (manager) => {
+        return this.atomicPhase_(async (manager: EntityManager) => {
             const rentalProductRepo = manager.getRepository(RentalProduct)
 
-            // Check if the product exists
+            // 먼저 일반 제품이 존재하는지 확인
             await this.productService_.retrieve(data.product_id)
 
-            const rentalProduct = rentalProductRepo.create(data)
+            const rentalProduct = rentalProductRepo.create({
+                id: generateEntityId(RentalProduct.name), // manager_로 수정
+                ...data
+            })
             return await rentalProductRepo.save(rentalProduct)
         })
     }
 
-    async retrieve(
-        rentalProductId: string,
-        config?: FindOneOptions<RentalProduct>
-    ): Promise<RentalProduct> {
+    async retrieve(productId: string): Promise<RentalProduct> {
         const rentalProductRepo = this.manager_.getRepository(RentalProduct)
         const rentalProduct = await rentalProductRepo.findOne({
-            where: {id: rentalProductId},
-            ...config,
+            where: { product_id: productId },
         })
 
         if (!rentalProduct) {
-            throw new MedusaError(
-                MedusaError.Types.NOT_FOUND,
-                `Rental product with id: ${rentalProductId} was not found`
-            )
+            throw new Error(`Rental product with id ${productId} not found`)
         }
 
         return rentalProduct
     }
 
-    async calculateRentalPrice(
-        rentalProductId: string,
-        rentalDays: number
-    ): Promise<number> {
-        const rentalProduct = await this.retrieve(rentalProductId)
+    async update(productId: string, data: Partial<CreateRentalProductInput>): Promise<RentalProduct> {
+        return this.atomicPhase_(async (manager) => {
+            const rentalProductRepo = manager.getRepository(RentalProduct)
+            const rentalProduct = await this.retrieve(productId)
 
-        if (rentalDays <= 2) {
-            return rentalProduct.short_term_rate * rentalDays
-        } else if (rentalDays <= 15) {
-            return rentalProduct.medium_term_rate * rentalDays
+            Object.assign(rentalProduct, data)
+            return await rentalProductRepo.save(rentalProduct)
+        })
+    }
+
+    async delete(productId: string): Promise<void> {
+        return this.atomicPhase_(async (manager) => {
+            const rentalProductRepo = manager.getRepository(RentalProduct)
+            const rentalProduct = await this.retrieve(productId)
+
+            await rentalProductRepo.remove(rentalProduct)
+        })
+    }
+
+    async calculateRentalPrice(productId: string, days: number): Promise<number> {
+        const rentalProduct = await this.retrieve(productId)
+
+        if (days <= rentalProduct.rental_periods.short_term.max) {
+            return days * rentalProduct.short_term_rate
+        } else if (days <= rentalProduct.rental_periods.medium_term.max) {
+            return days * rentalProduct.medium_term_rate
         } else {
-            return rentalProduct.long_term_rate * rentalDays
+            return days * rentalProduct.long_term_rate
         }
     }
 }
