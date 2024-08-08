@@ -9,18 +9,14 @@ import {
     defaultStoreCartRelations,
     defaultStoreCartFields,
 } from "@medusajs/medusa";
-import {validateAndTransformBody} from "@medusajs/medusa/dist/api-v2/utils/validate-body";
-import {validateAndTransformQuery} from "@medusajs/medusa/dist/api-v2/utils/validate-query";
-import {StoreAddCartLineItem, StoreGetCartsCart} from "@medusajs/medusa/dist/api-v2/store/carts/validators";
-import * as QueryConfig from "./store/query-config"
-import {authenticate} from "@medusajs/medusa/dist/utils/authenticate-middleware";
 
-const storeMiddleware = (
+async function rentalItemMiddleware(
     req: MedusaRequest,
     res: MedusaResponse,
     next: MedusaNextFunction
-) => {
-    // do something
+) {
+    // 여기에 렌탈 아이템 관련 미들웨어 로직을 구현
+    console.log("Rental item being added to cart")
     next()
 }
 
@@ -36,6 +32,10 @@ export const config: MiddlewaresConfig = {
                     isList: false,
                 }),
             ],
+        },
+        {
+            matcher: "/store/carts/.*/rental-items",
+            middlewares: [rentalItemMiddleware],
         },
     ],
 }
