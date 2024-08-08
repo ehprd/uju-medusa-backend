@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    /* Emit a single file with source maps instead of having a separate file. */
+    /* Emit product_variant.ts single file with source maps instead of having product_variant.ts separate file. */
     "inlineSourceMap": true
   },
   "exclude": ["src/admin", "**/*.spec.js"]

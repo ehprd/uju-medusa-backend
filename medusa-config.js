@@ -32,7 +32,7 @@ try {
 const ADMIN_CORS =
   process.env.ADMIN_CORS || "http://localhost:7000,http://localhost:7001";
 
-// CORS to avoid issues when consuming Medusa from a client
+// CORS to avoid issues when consuming Medusa from product_variant.ts client
 const STORE_CORS = process.env.STORE_CORS || "http://localhost:8000";
 
 const DATABASE_URL =
@@ -74,7 +74,7 @@ const plugins = [
         admin: {
           callbackUrl: `${BACKEND_URL}/admin/auth/google/cb`,
           failureRedirect: `${ADMIN_URL}/login`,
-          // The success redirect can be overriden from the client by adding a query param `?redirectTo=your_url` to the auth url
+          // The success redirect can be overriden from the client by adding product_variant.ts query param `?redirectTo=your_url` to the auth url
           // This query param will have the priority over this configuration
           successRedirect: `${ADMIN_URL}/`
           // authPath: '/admin/auth/google',
@@ -87,7 +87,7 @@ const plugins = [
         store: {
           callbackUrl: `${BACKEND_URL}/store/auth/google/cb`,
           failureRedirect: `${STORE_URL}/login`,
-          // The success redirect can be overriden from the client by adding a query param `?redirectTo=your_url` to the auth url
+          // The success redirect can be overriden from the client by adding product_variant.ts query param `?redirectTo=your_url` to the auth url
           // This query param will have the priority over this configuration
           successRedirect: `${STORE_URL}/google/`
           // authPath: '/store/auth/google',

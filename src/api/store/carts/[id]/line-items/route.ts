@@ -192,8 +192,8 @@ export async function addOrUpdateLineItem(
             metadata: data.metadata,
         })
 
-    line.unit_price = 123345
-    line.quantity = 11
+    // line.unit_price = 123345
+    // line.quantity = 11
 
     await manager.transaction(async (transactionManager) => {
         const txCartService = cartService.withTransaction(transactionManager)

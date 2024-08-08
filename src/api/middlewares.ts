@@ -2,7 +2,12 @@ import {
     MiddlewaresConfig,
     MedusaRequest,
     MedusaResponse,
-    MedusaNextFunction, requireCustomerAuthentication,
+    MedusaNextFunction,
+    requireCustomerAuthentication,
+    transformStoreQuery,
+    FindParams,
+    defaultStoreCartRelations,
+    defaultStoreCartFields,
 } from "@medusajs/medusa";
 import {validateAndTransformBody} from "@medusajs/medusa/dist/api-v2/utils/validate-body";
 import {validateAndTransformQuery} from "@medusajs/medusa/dist/api-v2/utils/validate-query";
@@ -16,11 +21,21 @@ const storeMiddleware = (
     next: MedusaNextFunction
 ) => {
     // do something
-    console.log("storeMiddleware")
     next()
 }
 
 export const config: MiddlewaresConfig = {
     routes: [
+        {
+            method: ["GET"],
+            matcher: "/store/carts/:id",
+            middlewares: [
+                transformStoreQuery(FindParams, {
+                    defaultRelations: defaultStoreCartRelations,
+                    defaultFields: defaultStoreCartFields,
+                    isList: false,
+                }),
+            ],
+        },
     ],
 }

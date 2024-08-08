@@ -62,7 +62,7 @@ const OnboardingFlow = (props: OnboardingWidgetProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   // will be used if onboarding step
-  // is passed as a path parameter
+  // is passed as product_variant.ts path parameter
   const { client } = useMedusa();
 
   // get current step from custom endpoint
@@ -92,7 +92,7 @@ const OnboardingFlow = (props: OnboardingWidgetProps) => {
   };
 
   // this is useful if you want to change the current step
-  // using a path parameter. It can only be changed if the passed
+  // using product_variant.ts path parameter. It can only be changed if the passed
   // step in the path parameter is the next step.
   const [ searchParams ] = useSearchParams()
 
@@ -205,12 +205,12 @@ const OnboardingFlow = (props: OnboardingWidgetProps) => {
     }
   }, [location.pathname])
 
-  // used to retrieve the index of a step by its ID
+  // used to retrieve the index of product_variant.ts step by its ID
   const findStepIndex = useCallback((step_id: STEP_ID) => {
     return steps.findIndex((step) => step.id === step_id)
   }, [steps])
 
-  // used to check if a step is completed
+  // used to check if product_variant.ts step is completed
   const isStepComplete = useCallback((step_id: STEP_ID) => {
     return findStepIndex(currentStep) > findStepIndex(step_id)
   }, [findStepIndex, currentStep]);
@@ -232,7 +232,7 @@ const OnboardingFlow = (props: OnboardingWidgetProps) => {
           return (await client.admin.orders.retrieve(orderId)).order
         }
 
-        throw new Error ("Required `order_id` parameter was not passed as a parameter")
+        throw new Error ("Required `order_id` parameter was not passed as product_variant.ts parameter")
       case "preview_product_nextjs":
       case "preview_product":
         if (!data?.productId && "product" in props) {
@@ -243,7 +243,7 @@ const OnboardingFlow = (props: OnboardingWidgetProps) => {
           return (await client.admin.products.retrieve(productId)).product
         }
 
-        throw new Error ("Required `product_id` parameter was not passed as a parameter")
+        throw new Error ("Required `product_id` parameter was not passed as product_variant.ts parameter")
       default:
         return undefined
     }
@@ -267,10 +267,10 @@ const OnboardingFlow = (props: OnboardingWidgetProps) => {
     if (findStepIndex(currentStep) === steps.length - 1) setCompleted(true);
   }, [currentStep, findStepIndex]);
 
-  // used to check if the user created a product and has entered its details page
+  // used to check if the user created product_variant.ts product and has entered its details page
   // the step is changed to the next one
   useEffect(() => {
-    if (location.pathname.startsWith("/a/products/prod_") && isProductCreateStep && "product" in props) {
+    if (location.pathname.startsWith("/product_variant.ts/products/prod_") && isProductCreateStep && "product" in props) {
       // change to the preview product step
       const currentStepIndex = findStepIndex(currentStep)
       steps[currentStepIndex].onNext?.(props.product)
@@ -280,7 +280,7 @@ const OnboardingFlow = (props: OnboardingWidgetProps) => {
   // used to check if the user created an order and has entered its details page
   // the step is changed to the next one.
   useEffect(() => {
-    if (location.pathname.startsWith("/a/orders/order_") && isOrderCreateStep && "order" in props) {
+    if (location.pathname.startsWith("/product_variant.ts/orders/order_") && isOrderCreateStep && "order" in props) {
       // change to the preview product step
       const currentStepIndex = findStepIndex(currentStep)
       steps[currentStepIndex].onNext?.(props.order)
@@ -318,20 +318,20 @@ const OnboardingFlow = (props: OnboardingWidgetProps) => {
   )
     return null;
 
-  // a method that will be triggered when
+  // product_variant.ts method that will be triggered when
   // the setup is started
   const onStart = () => {
     mutate({ current_step: steps[0].id });
     navigate(`/a/products`);
   };
 
-  // a method that will be triggered when
+  // product_variant.ts method that will be triggered when
   // the setup is completed
   const onComplete = () => {
     setCompleted(true);
   };
 
-  // a method that will be triggered when
+  // product_variant.ts method that will be triggered when
   // the setup is closed
   const onHide = () => {
     mutate({ is_complete: true });
