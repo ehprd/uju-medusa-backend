@@ -43,10 +43,10 @@ type RentalProduct = {
 
 type RentalProductItemProps = {
     rentalProduct: RentalProduct;
-    onDelete: (id: string) => void;
 };
 
 const RentalProductsPage = () => {
+
     const [showCreateForm, setShowCreateForm] = useState(false)
     const [rentalProductData, setRentalProductData] = useState({
         title: "",
@@ -114,19 +114,6 @@ const RentalProductsPage = () => {
             }
         )
     }
-
-    const handleDeleteRentalProduct = (id: string) => {
-        const {mutate: deleteRentalProduct} = useAdminCustomDelete(
-            `/admin/rental-products/${id}`,
-            ["admin_rental_products"]
-        )
-
-        deleteRentalProduct(void 0, {
-            onSuccess: () => {
-                refetch();
-            },
-        });
-    };
 
     if (isLoading) return <div>Loading...</div>
 
@@ -222,7 +209,6 @@ const RentalProductsPage = () => {
                             <RentalProductItem
                                 key={rentalProduct.id}
                                 rentalProduct={rentalProduct}
-                                onDelete={handleDeleteRentalProduct}
                             />
                         ))}
                     </Table.Body>
@@ -234,7 +220,21 @@ const RentalProductsPage = () => {
     )
 }
 
-const RentalProductItem: React.FC<RentalProductItemProps> = ({ rentalProduct, onDelete }) => {
+const RentalProductItem: React.FC<RentalProductItemProps> = ({ rentalProduct }) => {
+    const {mutate: deleteRentalProduct} = useAdminCustomDelete(
+        `/admin/rental-products/${rentalProduct.id}`,
+        ["admin_rental_products"]
+    )
+
+
+    const handleDeleteRentalProduct = (id: string) => {
+        deleteRentalProduct(void 0, {
+            onSuccess: () => {
+                // refetch();
+            },
+        });
+    };
+
     return (
         <Table.Row key={rentalProduct.id}>
             <Table.Cell>{rentalProduct.product_id}</Table.Cell>
@@ -245,7 +245,7 @@ const RentalProductItem: React.FC<RentalProductItemProps> = ({ rentalProduct, on
                 <Button
                     variant="danger"
                     size="small"
-                    onClick={() => onDelete(rentalProduct.id)}
+                    onClick={() => handleDeleteRentalProduct(rentalProduct.id)}
                 >
                     Delete
                 </Button>
