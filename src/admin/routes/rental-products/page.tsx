@@ -7,7 +7,6 @@ import {
 } from "medusa-react"
 import {useState} from "react"
 import {Table, Button} from "@medusajs/ui"
-import {Product} from "@medusajs/medusa";
 import {RouteConfig} from "@medusajs/admin";
 
 type CreateProductData = {
@@ -48,7 +47,7 @@ type RentalProductItemProps = {
 };
 
 const RentalProductsPage = () => {
-    const [selectedProduct, setSelectedProduct] = useState<string>("")
+    const [showCreateForm, setShowCreateForm] = useState(false)
     const [rentalProductData, setRentalProductData] = useState({
         title: "",
         short_term_rate: 0,
@@ -75,8 +74,7 @@ const RentalProductsPage = () => {
     )
 
     const handleCreateRentalProduct = () => {
-        // 1. 먼저 Product를 생성합니다.
-        const product = createProduct(
+        createProduct(
             {
                 title: rentalProductData.title,
                 handle: rentalProductData.title.toLowerCase().replace(/ /g, "-"),
@@ -88,7 +86,6 @@ const RentalProductsPage = () => {
             },
             {
                 onSuccess: (data) => {
-                    // 2. Product 생성 후 RentalProduct를 생성합니다.
                     createRentalProduct(
                         {
                             product_id: data.product.id,
@@ -98,7 +95,7 @@ const RentalProductsPage = () => {
                             onSuccess: () => {
                                 refetch()
                                 refetchProducts()
-                                setSelectedProduct("")
+                                setShowCreateForm(false)
                                 setRentalProductData({
                                     title: "",
                                     short_term_rate: 0,
@@ -116,7 +113,6 @@ const RentalProductsPage = () => {
                 },
             }
         )
-
     }
 
     const handleDeleteRentalProduct = (id: string) => {
@@ -127,8 +123,7 @@ const RentalProductsPage = () => {
 
         deleteRentalProduct(void 0, {
             onSuccess: () => {
-                // DELETE 요청 성공 시 처리
-                refetch(); // 데이터를 새로 고침
+                refetch();
             },
         });
     };
@@ -141,55 +136,75 @@ const RentalProductsPage = () => {
         <div className="p-8">
             <h1 className="text-2xl font-bold mb-4">Rental Products</h1>
 
-            <div className="mb-4">
-                <input
-                    type="text"
-                    value={rentalProductData.title}
-                    onChange={(e) => setRentalProductData({
-                        ...rentalProductData,
-                        title: e.target.value
-                    })}
-                    className="mr-2 p-2 border rounded"
-                    placeholder="Product Title"
-                />
-                <input
-                    type="number"
-                    value={rentalProductData.short_term_rate}
-                    onChange={(e) => setRentalProductData({
-                        ...rentalProductData,
-                        short_term_rate: parseInt(e.target.value)
-                    })}
-                    className="mr-2 p-2 border rounded"
-                    placeholder="Short Term Rate"
-                />
-                <input
-                    type="number"
-                    value={rentalProductData.medium_term_rate}
-                    onChange={(e) => setRentalProductData({
-                        ...rentalProductData,
-                        medium_term_rate: parseInt(e.target.value)
-                    })}
-                    className="mr-2 p-2 border rounded"
-                    placeholder="Medium Term Rate"
-                />
-                <input
-                    type="number"
-                    value={rentalProductData.long_term_rate}
-                    onChange={(e) => setRentalProductData({
-                        ...rentalProductData,
-                        long_term_rate: parseInt(e.target.value)
-                    })}
-                    className="mr-2 p-2 border rounded"
-                    placeholder="Long Term Rate"
-                />
-                <button
-                    onClick={handleCreateRentalProduct}
-                    disabled={isCreatingProduct || isCreatingRentalProduct || !rentalProductData.title}
-                    className="bg-blue-500 text-white p-2 rounded"
+            {!showCreateForm ? (
+                <Button
+                    variant="primary"
+                    size="small"
+                    onClick={() => setShowCreateForm(true)}
+                    className="mb-4"
                 >
                     Create Rental Product
-                </button>
-            </div>
+                </Button>
+            ) : (
+                <div className="mb-4">
+                    <input
+                        type="text"
+                        value={rentalProductData.title}
+                        onChange={(e) => setRentalProductData({
+                            ...rentalProductData,
+                            title: e.target.value
+                        })}
+                        className="mr-2 p-2 border rounded"
+                        placeholder="Product Title"
+                    />
+                    <input
+                        type="number"
+                        value={rentalProductData.short_term_rate}
+                        onChange={(e) => setRentalProductData({
+                            ...rentalProductData,
+                            short_term_rate: parseInt(e.target.value)
+                        })}
+                        className="mr-2 p-2 border rounded"
+                        placeholder="Short Term Rate"
+                    />
+                    <input
+                        type="number"
+                        value={rentalProductData.medium_term_rate}
+                        onChange={(e) => setRentalProductData({
+                            ...rentalProductData,
+                            medium_term_rate: parseInt(e.target.value)
+                        })}
+                        className="mr-2 p-2 border rounded"
+                        placeholder="Medium Term Rate"
+                    />
+                    <input
+                        type="number"
+                        value={rentalProductData.long_term_rate}
+                        onChange={(e) => setRentalProductData({
+                            ...rentalProductData,
+                            long_term_rate: parseInt(e.target.value)
+                        })}
+                        className="mr-2 p-2 border rounded"
+                        placeholder="Long Term Rate"
+                    />
+                    <Button
+                        variant="primary"
+                        size="small"
+                        onClick={handleCreateRentalProduct}
+                        disabled={isCreatingProduct || isCreatingRentalProduct || !rentalProductData.title}
+                        className="mr-2"
+                    >
+                        Create
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        size="small"
+                        onClick={() => setShowCreateForm(false)}
+                    >
+                        Cancel
+                    </Button>
+                </div>
+            )}
 
             {rentalProducts.length > 0 ? (
                 <Table>
