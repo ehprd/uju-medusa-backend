@@ -1,80 +1,107 @@
-// src/services/rental-product.ts
 import {
     TransactionBaseService,
-    ProductService,
+    FindConfig,
+    Selector,
+    ProductService
 } from "@medusajs/medusa"
-import {EntityManager} from "typeorm"
-import {RentalProduct} from "../models/rental_product";
-import {generateEntityId} from "@medusajs/utils";
+import {EntityManager, Equal, FindManyOptions, FindOptionsWhere} from "typeorm"
 import RentalProductRepository from "../repositories/rental-product";
-
-type CreateRentalProductInput = {
-    product_id: string
-    short_term_rate: number
-    medium_term_rate: number
-    long_term_rate: number
-    rental_periods?: {
-        short_term: { min: number; max: number }
-        medium_term: { min: number; max: number }
-        long_term: { min: number }
-    }
-}
+import {RentalProduct} from "../models/rental_product";
+import {CreateRentalProductInput, RentalProductSelector, UpdateRentalProductInput} from "../admin/types/rental-product";
 
 class RentalProductService extends TransactionBaseService {
     protected manager_: EntityManager
+    protected transactionManager_: EntityManager | undefined
     protected readonly rentalProductRepository_: typeof RentalProductRepository
-
-    protected transactionManager_: EntityManager
-    protected productService_: ProductService
+    protected readonly productService_: ProductService
 
     constructor(container) {
         super(container)
+        this.manager_ = container.manager
         this.rentalProductRepository_ = container.rentalProductRepository
         this.productService_ = container.productService
     }
 
-    async create(data: CreateRentalProductInput): Promise<RentalProduct> {
-        return this.atomicPhase_(async (manager) => {
-            // 먼저 일반 제품이 존재하는지 확인
-            const product = await this.productService_.retrieve(data.product_id)
+    async list(
+        selector: RentalProductSelector = {},
+        config: FindConfig<RentalProduct> = { relations: [], skip: 0, take: 20 }
+    ): Promise<RentalProduct[]> {
+        const rentalProductRepo = this.activeManager_.getRepository(RentalProduct)
 
-            const rentalProduct = this.rentalProductRepository_.create({
-                id: generateEntityId(RentalProduct.name),
-                product: product, // 관계 설정
-                ...data
-            })
+        const query: FindManyOptions<RentalProduct> = {
+            where: this.buildWhere_(selector),
+            take: config.take,
+            skip: config.skip,
+            relations: config.relations,
+        }
 
-            return await this.rentalProductRepository_.save(rentalProduct)
-        })
+        return await rentalProductRepo.find(query)
     }
 
-    async retrieve(productId: string): Promise<RentalProduct> {
-        const rentalProductRepo = this.manager_.getRepository(RentalProduct)
+    private buildWhere_(selector: RentalProductSelector): FindOptionsWhere<RentalProduct> {
+        const where: FindOptionsWhere<RentalProduct> = {}
+
+        for (const [key, value] of Object.entries(selector)) {
+            if (value !== undefined && value !== null) {
+                switch (key) {
+                    case 'id':
+                    case 'product_id':
+                        where[key] = Equal(value as string)
+                        break
+                    case 'is_available':
+                        where[key] = value as boolean
+                        break
+                    // 여기에 다른 필드에 대한 처리를 추가할 수 있습니다.
+                    default:
+                        // 알 수 없는 키에 대한 처리
+                        console.warn(`Unknown selector key: ${key}`)
+                }
+            }
+        }
+
+        return where
+    }
+
+    async retrieve(id: string, config: FindConfig<RentalProduct> = {}): Promise<RentalProduct> {
+        const rentalProductRepo = this.activeManager_.getRepository(RentalProduct)
         const rentalProduct = await rentalProductRepo.findOne({
-            where: {product_id: productId},
+            where: { id },
+            ...config,
         })
 
         if (!rentalProduct) {
-            throw new Error(`Rental product with id ${productId} not found`)
+            throw new Error(`Rental product with id: ${id} not found`)
         }
 
         return rentalProduct
     }
 
-    async update(productId: string, data: Partial<CreateRentalProductInput>): Promise<RentalProduct> {
+    async create(data: CreateRentalProductInput): Promise<RentalProduct> {
         return this.atomicPhase_(async (manager) => {
             const rentalProductRepo = manager.getRepository(RentalProduct)
-            const rentalProduct = await this.retrieve(productId)
+
+            // Verify that the product exists
+            await this.productService_.retrieve(data.product_id)
+
+            const rentalProduct = rentalProductRepo.create(data)
+            return await rentalProductRepo.save(rentalProduct)
+        })
+    }
+
+    async update(id: string, data: UpdateRentalProductInput): Promise<RentalProduct> {
+        return this.atomicPhase_(async (manager) => {
+            const rentalProductRepo = manager.getRepository(RentalProduct)
+            const rentalProduct = await this.retrieve(id)
 
             Object.assign(rentalProduct, data)
             return await rentalProductRepo.save(rentalProduct)
         })
     }
 
-    async delete(productId: string): Promise<void> {
+    async delete(id: string): Promise<void> {
         return this.atomicPhase_(async (manager) => {
             const rentalProductRepo = manager.getRepository(RentalProduct)
-            const rentalProduct = await this.retrieve(productId)
+            const rentalProduct = await this.retrieve(id)
 
             await rentalProductRepo.remove(rentalProduct)
         })
