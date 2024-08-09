@@ -1,7 +1,8 @@
-import { RouteConfig } from "@medusajs/admin"
-import { useAdminProducts, useAdminCustomQuery, useAdminCustomPost, useAdminCustomDelete } from "medusa-react"
-import { useState } from "react"
-import { Product } from "@medusajs/medusa"
+import {RouteConfig} from "@medusajs/admin"
+import {useAdminProducts, useAdminCustomQuery, useAdminCustomPost, useAdminCustomDelete} from "medusa-react"
+import {useState} from "react"
+import {Product} from "@medusajs/medusa"
+import {Table, Button} from "@medusajs/ui"
 
 // RentalProduct 타입 정의 추가
 type RentalProduct = {
@@ -24,24 +25,24 @@ const RentalProductsPage = () => {
         medium_term_rate: 0,
         long_term_rate: 0,
         rental_periods: {
-            short_term: { min: 1, max: 7 },
-            medium_term: { min: 8, max: 30 },
-            long_term: { min: 31 },
+            short_term: {min: 1, max: 7},
+            medium_term: {min: 8, max: 30},
+            long_term: {min: 31},
         },
     })
 
-    const { products } = useAdminProducts()
-    const { data, isLoading, refetch } = useAdminCustomQuery<{ rental_products: RentalProduct[] }>(
+    const {products} = useAdminProducts()
+    const {data, isLoading, refetch} = useAdminCustomQuery<{ rental_products: RentalProduct[] }>(
         `/admin/rental-products`,
         ["admin_rental_products"]
     )
 
-    const { mutate: createRentalProduct, isLoading: isCreating } = useAdminCustomPost(
+    const {mutate: createRentalProduct, isLoading: isCreating} = useAdminCustomPost(
         `/admin/rental-products`,
         ["admin_rental_products"]
     )
 
-    const { mutate: deleteRentalProduct } = useAdminCustomDelete(
+    const {mutate: deleteRentalProduct} = useAdminCustomDelete(
         `/admin/rental-products/:id`,
         ["admin_rental_products"]
     )
@@ -59,9 +60,9 @@ const RentalProductsPage = () => {
                     medium_term_rate: 0,
                     long_term_rate: 0,
                     rental_periods: {
-                        short_term: { min: 1, max: 7 },
-                        medium_term: { min: 8, max: 30 },
-                        long_term: { min: 31 },
+                        short_term: {min: 1, max: 7},
+                        medium_term: {min: 8, max: 30},
+                        long_term: {min: 31},
                     },
                 })
             }
@@ -99,21 +100,30 @@ const RentalProductsPage = () => {
                 <input
                     type="number"
                     value={rentalProductData.short_term_rate}
-                    onChange={(e) => setRentalProductData({...rentalProductData, short_term_rate: parseInt(e.target.value)})}
+                    onChange={(e) => setRentalProductData({
+                        ...rentalProductData,
+                        short_term_rate: parseInt(e.target.value)
+                    })}
                     className="mr-2 p-2 border rounded"
                     placeholder="Short Term Rate"
                 />
                 <input
                     type="number"
                     value={rentalProductData.medium_term_rate}
-                    onChange={(e) => setRentalProductData({...rentalProductData, medium_term_rate: parseInt(e.target.value)})}
+                    onChange={(e) => setRentalProductData({
+                        ...rentalProductData,
+                        medium_term_rate: parseInt(e.target.value)
+                    })}
                     className="mr-2 p-2 border rounded"
                     placeholder="Medium Term Rate"
                 />
                 <input
                     type="number"
                     value={rentalProductData.long_term_rate}
-                    onChange={(e) => setRentalProductData({...rentalProductData, long_term_rate: parseInt(e.target.value)})}
+                    onChange={(e) => setRentalProductData({
+                        ...rentalProductData,
+                        long_term_rate: parseInt(e.target.value)
+                    })}
                     className="mr-2 p-2 border rounded"
                     placeholder="Long Term Rate"
                 />
@@ -127,24 +137,38 @@ const RentalProductsPage = () => {
             </div>
 
             {rentalProducts.length > 0 ? (
-                <ul>
-                    {rentalProducts.map((rentalProduct) => (
-                        <li key={rentalProduct.id} className="mb-2">
-                            Product ID: {rentalProduct.product_id},
-                            Short Term Rate: {rentalProduct.short_term_rate},
-                            Medium Term Rate: {rentalProduct.medium_term_rate},
-                            Long Term Rate: {rentalProduct.long_term_rate}
-                            <button
-                                onClick={() => handleDeleteRentalProduct(rentalProduct.id)}
-                                className="ml-2 bg-red-500 text-white p-1 rounded"
-                            >
-                                Delete
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+                <Table>
+                    <Table.Header>
+                        <Table.Row>
+                            <Table.HeaderCell>Product ID</Table.HeaderCell>
+                            <Table.HeaderCell>Short Term Rate</Table.HeaderCell>
+                            <Table.HeaderCell>Medium Term Rate</Table.HeaderCell>
+                            <Table.HeaderCell>Long Term Rate</Table.HeaderCell>
+                            <Table.HeaderCell>Actions</Table.HeaderCell>
+                        </Table.Row>
+                    </Table.Header>
+                    <Table.Body>
+                        {rentalProducts.map((rentalProduct) => (
+                            <Table.Row key={rentalProduct.id}>
+                                <Table.Cell>{rentalProduct.product_id}</Table.Cell>
+                                <Table.Cell>{rentalProduct.short_term_rate}</Table.Cell>
+                                <Table.Cell>{rentalProduct.medium_term_rate}</Table.Cell>
+                                <Table.Cell>{rentalProduct.long_term_rate}</Table.Cell>
+                                <Table.Cell>
+                                    <Button
+                                        variant="danger"
+                                        size="small"
+                                        onClick={() => handleDeleteRentalProduct(rentalProduct.id)}
+                                    >
+                                        Delete
+                                    </Button>
+                                </Table.Cell>
+                            </Table.Row>
+                        ))}
+                    </Table.Body>
+                </Table>
             ) : (
-                <p>No rental products found.</p>
+                <p className="text-ui-fg-subtle">No rental products found.</p>
             )}
         </div>
     )

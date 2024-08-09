@@ -6,7 +6,7 @@ import {
 } from "@medusajs/medusa"
 import {EntityManager, Equal, FindManyOptions, FindOptionsWhere} from "typeorm"
 import RentalProductRepository from "../repositories/rental-product";
-import {RentalProduct} from "../models/rental_product";
+import {RentalProduct} from "../models/rental-product";
 import {CreateRentalProductInput, RentalProductSelector, UpdateRentalProductInput} from "../admin/types/rental-product";
 
 class RentalProductService extends TransactionBaseService {

@@ -1,7 +1,10 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm"
+import { MigrationInterface, QueryRunner, Table } from "typeorm"
 
 export class CreateRentalProductTable1691234567890 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
+        // UUID 확장 추가
+        await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`)
+
         await queryRunner.createTable(
             new Table({
                 name: "rental_product",
@@ -33,30 +36,31 @@ export class CreateRentalProductTable1691234567890 implements MigrationInterface
                         isNullable: true,
                     },
                     {
-                        name: "is_available",
-                        type: "boolean",
-                        default: true,
+                        name: "created_at",
+                        type: "timestamp with time zone",
+                        default: "now()",
+                    },
+                    {
+                        name: "updated_at",
+                        type: "timestamp with time zone",
+                        default: "now()",
+                    },
+                ],
+                foreignKeys: [
+                    {
+                        name: "fk_rental_product_product",
+                        columnNames: ["product_id"],
+                        referencedTableName: "product",
+                        referencedColumnNames: ["id"],
+                        onDelete: "CASCADE",
                     },
                 ],
             }),
             true
         )
-
-        await queryRunner.createForeignKey(
-            "rental_product",
-            new TableForeignKey({
-                columnNames: ["product_id"],
-                referencedColumnNames: ["id"],
-                referencedTableName: "product",
-                onDelete: "CASCADE",
-            })
-        )
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        const table = await queryRunner.getTable("rental_product")
-        const foreignKey = table.foreignKeys.find(fk => fk.columnNames.indexOf("product_id") !== -1)
-        await queryRunner.dropForeignKey("rental_product", foreignKey)
         await queryRunner.dropTable("rental_product")
     }
 }
