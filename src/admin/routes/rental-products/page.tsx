@@ -1,9 +1,33 @@
-import {RouteConfig} from "@medusajs/admin"
-import {useAdminProducts, useAdminCustomQuery, useAdminCustomPost, useAdminCustomDelete} from "medusa-react"
+import {
+    useAdminProducts,
+    useAdminCustomPost,
+    useAdminCustomQuery,
+    useAdminCustomDelete,
+    useAdminCreateProduct
+} from "medusa-react"
 import {useState} from "react"
-import {Product} from "@medusajs/medusa"
 import {Table, Button} from "@medusajs/ui"
+import {Product} from "@medusajs/medusa";
+import {RouteConfig} from "@medusajs/admin";
 
+type CreateProductData = {
+    title: string
+    is_giftcard: boolean
+    discountable: boolean
+    options: { title: string }[]
+    variants: {
+        title: string
+        prices: {
+            amount: number,
+            currency_code: string
+        }[]
+        options: { value: string }[]
+    }[],
+    collection_id: string
+    categories: { id: string }[]
+    type: { value: string }
+    tags: { value: string }[]
+}
 // RentalProduct 타입 정의 추가
 type RentalProduct = {
     id: string;
@@ -18,9 +42,15 @@ type RentalProduct = {
     };
 }
 
+type RentalProductItemProps = {
+    rentalProduct: RentalProduct;
+    onDelete: (id: string) => void;
+};
+
 const RentalProductsPage = () => {
     const [selectedProduct, setSelectedProduct] = useState<string>("")
     const [rentalProductData, setRentalProductData] = useState({
+        title: "",
         short_term_rate: 0,
         medium_term_rate: 0,
         long_term_rate: 0,
@@ -31,52 +61,77 @@ const RentalProductsPage = () => {
         },
     })
 
-    const {products} = useAdminProducts()
+    const {products, refetch: refetchProducts} = useAdminProducts()
     const {data, isLoading, refetch} = useAdminCustomQuery<{ rental_products: RentalProduct[] }>(
         `/admin/rental-products`,
         ["admin_rental_products"]
     )
 
-    const {mutate: createRentalProduct, isLoading: isCreating} = useAdminCustomPost(
+    const {mutate: createProduct, isLoading: isCreatingProduct} = useAdminCreateProduct()
+
+    const {mutate: createRentalProduct, isLoading: isCreatingRentalProduct} = useAdminCustomPost(
         `/admin/rental-products`,
         ["admin_rental_products"]
     )
 
-    const {mutate: deleteRentalProduct} = useAdminCustomDelete(
-        `/admin/rental-products/:id`,
-        ["admin_rental_products"]
-    )
-
     const handleCreateRentalProduct = () => {
-        createRentalProduct({
-            product_id: selectedProduct,
-            ...rentalProductData,
-        }, {
-            onSuccess: () => {
-                refetch()
-                setSelectedProduct("")
-                setRentalProductData({
-                    short_term_rate: 0,
-                    medium_term_rate: 0,
-                    long_term_rate: 0,
-                    rental_periods: {
-                        short_term: {min: 1, max: 7},
-                        medium_term: {min: 8, max: 30},
-                        long_term: {min: 31},
-                    },
-                })
+        // 1. 먼저 Product를 생성합니다.
+        const product = createProduct(
+            {
+                title: rentalProductData.title,
+                handle: rentalProductData.title.toLowerCase().replace(/ /g, "-"),
+                description: "Generated with Rental Product",
+                type: {value: "rental"},
+                variants: [],
+                options: [],
+                is_giftcard: false, discountable: false, collection_id: null, categories: [], tags: []
+            },
+            {
+                onSuccess: (data) => {
+                    // 2. Product 생성 후 RentalProduct를 생성합니다.
+                    createRentalProduct(
+                        {
+                            product_id: data.product.id,
+                            ...rentalProductData,
+                        },
+                        {
+                            onSuccess: () => {
+                                refetch()
+                                refetchProducts()
+                                setSelectedProduct("")
+                                setRentalProductData({
+                                    title: "",
+                                    short_term_rate: 0,
+                                    medium_term_rate: 0,
+                                    long_term_rate: 0,
+                                    rental_periods: {
+                                        short_term: {min: 1, max: 7},
+                                        medium_term: {min: 8, max: 30},
+                                        long_term: {min: 31},
+                                    },
+                                })
+                            },
+                        }
+                    )
+                },
             }
-        })
+        )
+
     }
 
     const handleDeleteRentalProduct = (id: string) => {
-        // @ts-ignore
-        deleteRentalProduct(id, {
+        const {mutate: deleteRentalProduct} = useAdminCustomDelete(
+            `/admin/rental-products/${id}`,
+            ["admin_rental_products"]
+        )
+
+        deleteRentalProduct(void 0, {
             onSuccess: () => {
-                refetch()
-            }
-        })
-    }
+                // DELETE 요청 성공 시 처리
+                refetch(); // 데이터를 새로 고침
+            },
+        });
+    };
 
     if (isLoading) return <div>Loading...</div>
 
@@ -87,16 +142,16 @@ const RentalProductsPage = () => {
             <h1 className="text-2xl font-bold mb-4">Rental Products</h1>
 
             <div className="mb-4">
-                <select
-                    value={selectedProduct}
-                    onChange={(e) => setSelectedProduct(e.target.value)}
+                <input
+                    type="text"
+                    value={rentalProductData.title}
+                    onChange={(e) => setRentalProductData({
+                        ...rentalProductData,
+                        title: e.target.value
+                    })}
                     className="mr-2 p-2 border rounded"
-                >
-                    <option value="">Select a product</option>
-                    {products?.map((product: Product) => (
-                        <option key={product.id} value={product.id}>{product.title}</option>
-                    ))}
-                </select>
+                    placeholder="Product Title"
+                />
                 <input
                     type="number"
                     value={rentalProductData.short_term_rate}
@@ -129,7 +184,7 @@ const RentalProductsPage = () => {
                 />
                 <button
                     onClick={handleCreateRentalProduct}
-                    disabled={isCreating || !selectedProduct}
+                    disabled={isCreatingProduct || isCreatingRentalProduct || !rentalProductData.title}
                     className="bg-blue-500 text-white p-2 rounded"
                 >
                     Create Rental Product
@@ -149,21 +204,11 @@ const RentalProductsPage = () => {
                     </Table.Header>
                     <Table.Body>
                         {rentalProducts.map((rentalProduct) => (
-                            <Table.Row key={rentalProduct.id}>
-                                <Table.Cell>{rentalProduct.product_id}</Table.Cell>
-                                <Table.Cell>{rentalProduct.short_term_rate}</Table.Cell>
-                                <Table.Cell>{rentalProduct.medium_term_rate}</Table.Cell>
-                                <Table.Cell>{rentalProduct.long_term_rate}</Table.Cell>
-                                <Table.Cell>
-                                    <Button
-                                        variant="danger"
-                                        size="small"
-                                        onClick={() => handleDeleteRentalProduct(rentalProduct.id)}
-                                    >
-                                        Delete
-                                    </Button>
-                                </Table.Cell>
-                            </Table.Row>
+                            <RentalProductItem
+                                key={rentalProduct.id}
+                                rentalProduct={rentalProduct}
+                                onDelete={handleDeleteRentalProduct}
+                            />
                         ))}
                     </Table.Body>
                 </Table>
@@ -173,6 +218,27 @@ const RentalProductsPage = () => {
         </div>
     )
 }
+
+const RentalProductItem: React.FC<RentalProductItemProps> = ({ rentalProduct, onDelete }) => {
+    return (
+        <Table.Row key={rentalProduct.id}>
+            <Table.Cell>{rentalProduct.product_id}</Table.Cell>
+            <Table.Cell>{rentalProduct.short_term_rate}</Table.Cell>
+            <Table.Cell>{rentalProduct.medium_term_rate}</Table.Cell>
+            <Table.Cell>{rentalProduct.long_term_rate}</Table.Cell>
+            <Table.Cell>
+                <Button
+                    variant="danger"
+                    size="small"
+                    onClick={() => onDelete(rentalProduct.id)}
+                >
+                    Delete
+                </Button>
+            </Table.Cell>
+        </Table.Row>
+    );
+};
+
 
 export const config: RouteConfig = {
     link: {
