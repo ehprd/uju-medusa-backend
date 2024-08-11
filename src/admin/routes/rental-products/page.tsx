@@ -5,9 +5,11 @@ import {
     useAdminCustomDelete,
     useAdminCreateProduct
 } from "medusa-react"
-import {useState} from "react"
+import React, {useState} from "react"
 import {Table, Button} from "@medusajs/ui"
 import {RouteConfig} from "@medusajs/admin";
+import {Product} from "@medusajs/medusa";
+import {Link} from "react-router-dom";
 
 type CreateProductData = {
     title: string
@@ -31,6 +33,7 @@ type CreateProductData = {
 type RentalProduct = {
     id: string;
     product_id: string;
+    product: Product;
     short_term_rate: number;
     medium_term_rate: number;
     long_term_rate: number;
@@ -197,6 +200,7 @@ const RentalProductsPage = () => {
                 <Table>
                     <Table.Header>
                         <Table.Row>
+                            <Table.HeaderCell>Title</Table.HeaderCell>
                             <Table.HeaderCell>Product ID</Table.HeaderCell>
                             <Table.HeaderCell>Short Term Rate</Table.HeaderCell>
                             <Table.HeaderCell>Medium Term Rate</Table.HeaderCell>
@@ -237,7 +241,22 @@ const RentalProductItem: React.FC<RentalProductItemProps> = ({ rentalProduct }) 
 
     return (
         <Table.Row key={rentalProduct.id}>
-            <Table.Cell>{rentalProduct.product_id}</Table.Cell>
+            <Table.Cell>
+                <Link
+                    to={`/a/rental-products/${rentalProduct.id}`}
+                    className="text-blue-500 hover:underline"
+                >
+                    {rentalProduct.product.title}
+                </Link>
+            </Table.Cell>
+            <Table.Cell>
+                <Link
+                    to={`/a/products/${rentalProduct.product_id}`}
+                    className="text-blue-500 hover:underline"
+                >
+                    {rentalProduct.product_id}
+                </Link>
+            </Table.Cell>
             <Table.Cell>{rentalProduct.short_term_rate}</Table.Cell>
             <Table.Cell>{rentalProduct.medium_term_rate}</Table.Cell>
             <Table.Cell>{rentalProduct.long_term_rate}</Table.Cell>

@@ -32,7 +32,9 @@ class RentalProductService extends TransactionBaseService {
             where: this.buildWhere_(selector),
             take: config.take,
             skip: config.skip,
-            relations: config.relations,
+            relations: {
+                product: true,
+            }
         }
 
         return await rentalProductRepo.find(query)

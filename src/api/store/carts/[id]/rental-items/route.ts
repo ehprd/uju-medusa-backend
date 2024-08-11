@@ -1,4 +1,4 @@
-// /api/store/carts/[cart_id]/rental-items/route.ts
+// /api/store/carts/[cart_id]/rental-items/page.tsx
 import type {
     LineItemService,
     MedusaRequest,
