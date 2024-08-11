@@ -90,61 +90,79 @@ class RentalProductService extends TransactionBaseService {
         return rentalProduct
     }
 
+    async setupRentalProductOptions(
+        productId: string,
+        data: {
+            short_term_rate: number,
+            medium_term_rate: number,
+            long_term_rate: number,
+            rentPlace: string,
+            returnPlace: string
+        }
+    ): Promise<void> {
+        const product = await this.productService_.retrieve(productId, {relations: ["options", "variants"]})
+
+        // Delete existing options and variants
+        for (const variant of product.variants) {
+            await this.productVariantService_.delete(variant.id)
+        }
+
+        for (const option of product.options) {
+            await this.productService_.deleteOption(product.id, option.id)
+        }
+
+        // Add rental type option
+        const newProduct = await this.productService_.addOption(product.id, "Rental Type")
+        const rentalTypeOption = await this.productService_.retrieveOptionByTitle("Rental Type", newProduct.id)
+
+        // Create rental variants
+        await this.productVariantService_.create(newProduct.id, {
+            title: "Daily Rental",
+            options: [{option_id: rentalTypeOption.id, value: "Daily Rental"}],
+            prices: [{amount: data.short_term_rate, currency_code: "krw"}],
+            inventory_quantity: 15,
+        })
+
+        await this.productVariantService_.create(product.id, {
+            title: "Weekly Rental",
+            options: [{option_id: rentalTypeOption.id, value: "Weekly Rental"}],
+            prices: [{amount: data.medium_term_rate, currency_code: "krw"}],
+            inventory_quantity: 12,
+        })
+
+        await this.productVariantService_.create(product.id, {
+            title: "Monthly Rental",
+            options: [{option_id: rentalTypeOption.id, value: "Monthly Rental"}],
+            prices: [{amount: data.long_term_rate, currency_code: "krw"}],
+            inventory_quantity: 12,
+        })
+
+        // Update product metadata
+        await this.productService_.update(product.id, {
+            metadata: {
+                dailyPrice: data.short_term_rate,
+                shortTermDailyPrice: data.medium_term_rate,
+                longTermDailyPrice: data.long_term_rate,
+                rentPlace: data.rentPlace,
+                returnPlace: data.returnPlace,
+            }
+        })
+    }
+
     async create(data: CreateRentalProductInput): Promise<RentalProduct> {
         return this.atomicPhase_(async (manager) => {
             const rentalProductRepo = manager.getRepository(RentalProduct)
 
-            // Verify that the product exists
-            const product = await this.productService_.retrieve(data.product_id, {relations: ["options", "variants"]})
-
-            // 2. 기존 Options와 Variants 삭제
-            for (const variant of product.variants) {
-                await this.productVariantService_.delete(variant.id)
-            }
-
-            for (const option of product.options) {
-                await this.productService_.deleteOption(product.id, option.id)
-            }
-
-            // 3. 렌트 유형 옵션 추가
-            const newProduct = await this.productService_.addOption(product.id, "Rental Type")
-
-            const rentalTypeOption = await this.productService_.retrieveOptionByTitle("Rental Type", newProduct.id)
-
-            // 4. 일일 렌트와 장기 렌트 Variant 생성
-            const dailyRentalVariant = await this.productVariantService_.create(newProduct.id, {
-                title: "Daily Rental",
-                options: [{option_id: rentalTypeOption.id, value: "Daily Rental"}],
-                prices: [{amount: data.short_term_rate, currency_code: "krw"}],
-                inventory_quantity: 15,
-            })
-
-            const weeklyRentalVariant = await this.productVariantService_.create(product.id, {
-                title: "Weekly Rental",
-                options: [{option_id: rentalTypeOption.id, value: "Weekly Rental"}],
-                prices: [{amount: data.medium_term_rate, currency_code: "krw"}],
-                inventory_quantity: 12,
-            })
-
-            const monthlyRentalVariant = await this.productVariantService_.create(product.id, {
-                title: "Monthly Rental",
-                options: [{option_id: rentalTypeOption.id, value: "Monthly Rental"}],
-                prices: [{amount: data.long_term_rate, currency_code: "krw"}],
-                inventory_quantity: 12,
-            })
-
-            await this.productService_.update(product.id, {
-                metadata: {
-                    dailyPrice: data.short_term_rate,
-                    shortTermDailyPrice: data.medium_term_rate,
-                    longTermDailyPrice: data.long_term_rate,
-                    rentPlace:data.rentPlace,
-                    returnPlace:data.returnPlace,
-                }
+            // Setup rental product options
+            await this.setupRentalProductOptions(data.product_id, {
+                short_term_rate: data.short_term_rate,
+                medium_term_rate: data.medium_term_rate,
+                long_term_rate: data.long_term_rate,
+                rentPlace: data.rentPlace,
+                returnPlace: data.returnPlace
             })
 
             const rentalProduct = rentalProductRepo.create(data)
-
             return await rentalProductRepo.save(rentalProduct)
         })
     }
@@ -152,45 +170,23 @@ class RentalProductService extends TransactionBaseService {
     async update(rentalProductId: string, data: Partial<CreateRentalProductInput>): Promise<RentalProduct> {
         return this.atomicPhase_(async (manager) => {
             const rentalProductRepo = manager.getRepository(RentalProduct)
-            const rentalProduct = await this.retrieve(rentalProductId)
+            const oldRentalProduct = await this.retrieve(rentalProductId)
 
-            const product = await this.productService_.retrieve(rentalProduct.product_id, {relations: ["variants", "options"]})
+            // Setup rental product options with updated data
+            await this.setupRentalProductOptions(oldRentalProduct.product_id, {
+                short_term_rate: data.short_term_rate || oldRentalProduct.short_term_rate,
+                medium_term_rate: data.medium_term_rate || oldRentalProduct.medium_term_rate,
+                long_term_rate: data.long_term_rate || oldRentalProduct.long_term_rate,
+                rentPlace: data.rentPlace || oldRentalProduct.rentPlace,
+                returnPlace: data.returnPlace || oldRentalProduct.returnPlace
+            })
 
-            if (data.short_term_rate || data.medium_term_rate || data.long_term_rate) {
-                // Update variant prices
-                for (const variant of product.variants) {
-                    if (variant.title === "Daily Rental" && data.short_term_rate) {
-                        await this.productVariantService_.update(variant.id, {
-                            prices: [{amount: data.short_term_rate, currency_code: "krw"}]
-                        })
-                    } else if (variant.title === "Weekly Rental" && data.medium_term_rate) {
-                        await this.productVariantService_.update(variant.id, {
-                            prices: [{amount: data.medium_term_rate, currency_code: "krw"}]
-                        })
-                    } else if (variant.title === "Monthly Rental" && data.long_term_rate) {
-                        await this.productVariantService_.update(variant.id, {
-                            prices: [{amount: data.long_term_rate, currency_code: "krw"}]
-                        })
-                    }
-                }
-
-                // Update product metadata
-                await this.productService_.update(product.id, {
-                    metadata: {
-                        ...product.metadata,
-                        dailyPrice: data.short_term_rate || product.metadata.dailyPrice,
-                        shortTermDailyPrice: data.medium_term_rate || product.metadata.shortTermDailyPrice,
-                        longTermDailyPrice: data.long_term_rate || product.metadata.longTermDailyPrice,
-                    }
-                })
-            }
-
-            // Update other rental product fields
-            Object.assign(rentalProduct, data)
-
-            return await rentalProductRepo.save(rentalProduct)
+            // Update rental product
+            Object.assign(oldRentalProduct, data)
+            return await rentalProductRepo.save(oldRentalProduct)
         })
     }
+
 
     async delete(rentalProductId: string): Promise<void> {
         return this.atomicPhase_(async (manager) => {

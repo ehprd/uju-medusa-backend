@@ -35,6 +35,11 @@ const RentalProductWidget = ({product}: ProductDetailsWidgetProps) => {
         ["rental_product", product.id]
     )
 
+    const {mutate: initializeRentalInfo, isLoading: isInitializing} = useAdminCustomPost(
+        `/admin/rental-products/initialize/${product.id}`,
+        ["rental_product", product.id]
+    )
+
     useEffect(() => {
         if (rentalInfo && rentalInfo.rental_product) {
             setRentalData({
@@ -56,6 +61,14 @@ const RentalProductWidget = ({product}: ProductDetailsWidgetProps) => {
             onSuccess: () => {
                 setIsEditing(false)
                 setIsConfirming(false)
+                refetch()
+            }
+        })
+    }
+
+    const handleInitialize = () => {
+        initializeRentalInfo(rentalData, {
+            onSuccess: () => {
                 refetch()
             }
         })
@@ -184,13 +197,23 @@ const RentalProductWidget = ({product}: ProductDetailsWidgetProps) => {
                 <Text>Rent Place: {rental_product.rentPlace}</Text>
                 <Text>Return Place: {rental_product.returnPlace}</Text>
             </div>
-            <Button
-                variant="secondary"
-                size="small"
-                onClick={() => setIsEditing(true)}
-            >
-                Edit Rental Information
-            </Button>
+            <div className="space-x-2 mt-4">
+                <Button
+                    variant="secondary"
+                    size="small"
+                    onClick={() => setIsEditing(true)}
+                >
+                    Edit Rental Information
+                </Button>
+                <Button
+                    variant="secondary"
+                    size="small"
+                    onClick={handleInitialize}
+                    disabled={isInitializing}
+                >
+                    Initialize from Product
+                </Button>
+            </div>
         </Container>
     )
 }
