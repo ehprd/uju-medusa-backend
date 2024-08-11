@@ -6,7 +6,7 @@ import {
     useAdminCreateProduct
 } from "medusa-react"
 import React, {useState} from "react"
-import {Table, Button} from "@medusajs/ui"
+import {Table, Button, Container, Heading} from "@medusajs/ui"
 import {RouteConfig} from "@medusajs/admin";
 import {Product} from "@medusajs/medusa";
 import {Link} from "react-router-dom";
@@ -225,54 +225,74 @@ const RentalProductsPage = () => {
 }
 
 const RentalProductItem: React.FC<RentalProductItemProps> = ({ rentalProduct }) => {
-    const {mutate: deleteRentalProduct} = useAdminCustomDelete(
+    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
+    const { mutate: deleteRentalProduct } = useAdminCustomDelete(
         `/admin/rental-products/${rentalProduct.id}`,
         ["admin_rental_products"]
     )
 
-
-    const handleDeleteRentalProduct = (id: string) => {
+    const handleDeleteRentalProduct = () => {
         deleteRentalProduct(void 0, {
             onSuccess: () => {
-                // refetch();
+                setShowDeleteConfirmation(false)
+                // 여기서 목록을 새로고침하는 함수를 호출할 수 있습니다.
+                // 예: refetchRentalProducts()
             },
         });
     };
 
     return (
-        <Table.Row key={rentalProduct.id}>
-            <Table.Cell>
-                <Link
-                    to={`/a/rental-products/${rentalProduct.id}`}
-                    className="text-blue-500 hover:underline"
-                >
-                    {rentalProduct.product.title}
-                </Link>
-            </Table.Cell>
-            <Table.Cell>
-                <Link
-                    to={`/a/products/${rentalProduct.product_id}`}
-                    className="text-blue-500 hover:underline"
-                >
-                    {rentalProduct.product_id}
-                </Link>
-            </Table.Cell>
-            <Table.Cell>{rentalProduct.short_term_rate}</Table.Cell>
-            <Table.Cell>{rentalProduct.medium_term_rate}</Table.Cell>
-            <Table.Cell>{rentalProduct.long_term_rate}</Table.Cell>
-            <Table.Cell>
-                <Button
-                    variant="danger"
-                    size="small"
-                    onClick={() => handleDeleteRentalProduct(rentalProduct.id)}
-                >
-                    Delete
-                </Button>
-            </Table.Cell>
-        </Table.Row>
+        <>
+            <Table.Row key={rentalProduct.id}>
+                <Table.Cell>
+                    <Link
+                        to={`/a/rental-products/${rentalProduct.id}`}
+                        className="text-blue-500 hover:underline"
+                    >
+                        {rentalProduct.product.title}
+                    </Link>
+                </Table.Cell>
+                <Table.Cell>
+                    <Link
+                        to={`/a/products/${rentalProduct.product_id}`}
+                        className="text-blue-500 hover:underline"
+                    >
+                        {rentalProduct.product_id}
+                    </Link>
+                </Table.Cell>
+                <Table.Cell>{rentalProduct.short_term_rate}</Table.Cell>
+                <Table.Cell>{rentalProduct.medium_term_rate}</Table.Cell>
+                <Table.Cell>{rentalProduct.long_term_rate}</Table.Cell>
+                <Table.Cell>
+                    <Button
+                        variant="danger"
+                        size="small"
+                        onClick={() => setShowDeleteConfirmation(true)}
+                    >
+                        Delete
+                    </Button>
+                </Table.Cell>
+            </Table.Row>
+
+            {showDeleteConfirmation && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <Container className="bg-white p-6 rounded-lg max-w-sm w-full">
+                        <Heading level="h2" className="mb-4">Confirm Deletion</Heading>
+                        <p className="mb-4 text-gray-700">Are you sure you want to delete this rental product? This action cannot be undone.</p>
+                        <div className="flex justify-end space-x-2">
+                            <Button variant="secondary" size="small" onClick={() => setShowDeleteConfirmation(false)}>
+                                Cancel
+                            </Button>
+                            <Button variant="danger" size="small" onClick={handleDeleteRentalProduct}>
+                                Delete
+                            </Button>
+                        </div>
+                    </Container>
+                </div>
+            )}
+        </>
     );
 };
-
 
 export const config: RouteConfig = {
     link: {
