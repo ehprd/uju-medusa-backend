@@ -1,14 +1,14 @@
-// src/admin/widgets/rental-product-widget.tsx
 import {WidgetConfig, ProductDetailsWidgetProps} from "@medusajs/admin"
 import {useAdminCustomQuery, useAdminCustomPost} from "medusa-react"
-import {useEffect, useState} from "react"
+import {useState, useEffect} from "react"
 import {
     Button,
     Container,
     Heading,
     Label,
     Input,
-    Text, Textarea
+    Text,
+    Textarea
 } from "@medusajs/ui"
 import {useNavigate} from "react-router-dom"
 import {RentalProduct} from "../../models/rental-product";
@@ -16,6 +16,7 @@ import {RentalProduct} from "../../models/rental-product";
 const RentalProductWidget = ({product}: ProductDetailsWidgetProps) => {
     const navigate = useNavigate()
     const [isEditing, setIsEditing] = useState(false)
+    const [isConfirming, setIsConfirming] = useState(false)
     const [rentalData, setRentalData] = useState({
         short_term_rate: 0,
         medium_term_rate: 0,
@@ -24,11 +25,10 @@ const RentalProductWidget = ({product}: ProductDetailsWidgetProps) => {
         returnPlace: ""
     })
 
-    const {data: rentalInfo, isLoading, refetch} = useAdminCustomQuery<{ rental_product: RentalProduct}>(
+    const {data: rentalInfo, isLoading, refetch} = useAdminCustomQuery<{ rental_product: RentalProduct }>(
         `/admin/rental-products/product/${product.id}`,
         ["admin_rental_products", product.id]
     )
-
 
     const {mutate: updateRentalInfo, isLoading: isUpdating} = useAdminCustomPost(
         `/admin/rental-products/product/${product.id}`,
@@ -47,11 +47,15 @@ const RentalProductWidget = ({product}: ProductDetailsWidgetProps) => {
         }
     }, [rentalInfo])
 
-
     const handleUpdate = () => {
+        setIsConfirming(true)
+    }
+
+    const confirmUpdate = () => {
         updateRentalInfo(rentalData, {
             onSuccess: () => {
                 setIsEditing(false)
+                setIsConfirming(false)
                 refetch()
             }
         })
@@ -59,8 +63,7 @@ const RentalProductWidget = ({product}: ProductDetailsWidgetProps) => {
 
     if (isLoading) return <Text>Loading...</Text>
 
-    const rental_product = rentalInfo.rental_product
-
+    const rental_product = rentalInfo?.rental_product
 
     if (rental_product === null) {
         return (
@@ -126,20 +129,45 @@ const RentalProductWidget = ({product}: ProductDetailsWidgetProps) => {
                             onChange={(e) => setRentalData({...rentalData, returnPlace: e.target.value})}
                         />
                     </div>
-                    <Button
-                        variant="primary"
-                        size="small"
-                        onClick={handleUpdate}
-                        disabled={isUpdating}
-                    >
-                        Update Rental Information
-                    </Button>
+                    {!isConfirming ? (
+                        <Button
+                            variant="primary"
+                            size="small"
+                            onClick={handleUpdate}
+                        >
+                            Update Rental Information
+                        </Button>
+                    ) : (
+                        <div className="space-y-2">
+                            <Text>Are you sure you want to update the rental information?</Text>
+                            <div className="space-x-2">
+                                <Button
+                                    variant="primary"
+                                    size="small"
+                                    onClick={confirmUpdate}
+                                    disabled={isUpdating}
+                                >
+                                    Confirm Update
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    size="small"
+                                    onClick={() => setIsConfirming(false)}
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                     <Button
                         variant="secondary"
                         size="small"
-                        onClick={() => setIsEditing(false)}
+                        onClick={() => {
+                            setIsEditing(false)
+                            setIsConfirming(false)
+                        }}
                     >
-                        Cancel
+                        Cancel Editing
                     </Button>
                 </div>
             </Container>
