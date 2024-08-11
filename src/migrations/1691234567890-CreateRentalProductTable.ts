@@ -20,15 +20,29 @@ export class CreateRentalProductTable1691234567890 implements MigrationInterface
                     },
                     {
                         name: "short_term_rate",
-                        type: "int",
+                        type: "decimal",
+                        precision: 10,
+                        scale: 2,
                     },
                     {
                         name: "medium_term_rate",
-                        type: "int",
+                        type: "decimal",
+                        precision: 10,
+                        scale: 2,
                     },
                     {
                         name: "long_term_rate",
-                        type: "int",
+                        type: "decimal",
+                        precision: 10,
+                        scale: 2,
+                    },
+                    {
+                        name: "rentPlace",
+                        type: "varchar",
+                    },
+                    {
+                        name: "returnPlace",
+                        type: "varchar",
                     },
                     {
                         name: "rental_periods",

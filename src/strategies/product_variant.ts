@@ -55,9 +55,6 @@ export default class MyStrategy extends PriceSelectionStrategy {
             console.log("RENTAL")
             console.log(prices)
             try {
-                prices.get(data[0].variantId).calculatedPrice = 100
-                prices.get(data[0].variantId).originalPrice = 200
-                prices.get(data[0].variantId).prices[0].amount= 300
                 console.log(prices.get(data[0].variantId).prices)
                 console.log(prices)
             } catch {

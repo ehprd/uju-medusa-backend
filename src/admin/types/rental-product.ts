@@ -1,5 +1,7 @@
 export type CreateRentalProductInput = {
-    product_id: string
+    product_id: string,
+    rentPlace: string,
+    returnPlace: string,
     short_term_rate: number
     medium_term_rate: number
     long_term_rate: number

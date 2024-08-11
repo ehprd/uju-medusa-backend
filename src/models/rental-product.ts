@@ -28,6 +28,12 @@ export class RentalProduct extends BaseEntity {
     @Column()
     long_term_rate: number
 
+    @Column()
+    rentPlace: string
+
+    @Column()
+    returnPlace: string
+
     @Column("jsonb")
     rental_periods: {
         short_term: { min: number; max: number }

@@ -2,7 +2,7 @@ import type {
     MedusaRequest,
     MedusaResponse,
 } from "@medusajs/medusa"
-import { EntityManager } from "typeorm"
+import {EntityManager} from "typeorm"
 
 import RentalProductService from "../../../services/rental-product"
 import {CreateRentalProductInput} from "../../../admin/types/rental-product";
@@ -16,7 +16,7 @@ export async function GET(
 
     const rentalProducts = await rentalProductService.list()
 
-    res.status(200).json({ rental_products: rentalProducts })
+    res.status(200).json({rental_products: rentalProducts})
 }
 
 export async function POST(
@@ -27,15 +27,21 @@ export async function POST(
         req.scope.resolve("rentalProductService")
     const manager: EntityManager = req.scope.resolve("manager")
 
-    console.log(req.body)
-
     // req.body의 타입을 검증하고 변환하는 함수
     function validateCreateRentalProductInput(data: unknown): CreateRentalProductInput {
         if (typeof data !== 'object' || data === null) {
             throw new Error('Invalid input: expected an object')
         }
 
-        const { product_id, short_term_rate, medium_term_rate, long_term_rate, rental_periods } = data as any
+        const {
+            product_id,
+            short_term_rate,
+            medium_term_rate,
+            long_term_rate,
+            rental_periods,
+            rentPlace,
+            returnPlace
+        } = data as any
 
         if (typeof product_id !== 'string' ||
             typeof short_term_rate !== 'number' ||
@@ -46,6 +52,8 @@ export async function POST(
 
         const input: CreateRentalProductInput = {
             product_id,
+            rentPlace,
+            returnPlace,
             short_term_rate,
             medium_term_rate,
             long_term_rate,
@@ -72,8 +80,8 @@ export async function POST(
             }
         )
 
-        res.status(200).json({ rental_product: rentalProduct })
+        res.status(200).json({rental_product: rentalProduct})
     } catch (error) {
-        res.status(400).json({ message: error.message })
+        res.status(400).json({message: error.message})
     }
 }

@@ -1,14 +1,14 @@
 // src/admin/widgets/rental-product-widget.tsx
 import {WidgetConfig, ProductDetailsWidgetProps} from "@medusajs/admin"
 import {useAdminCustomQuery, useAdminCustomPost} from "medusa-react"
-import {useState} from "react"
+import {useEffect, useState} from "react"
 import {
     Button,
     Container,
     Heading,
     Label,
     Input,
-    Text
+    Text, Textarea
 } from "@medusajs/ui"
 import {useNavigate} from "react-router-dom"
 import {RentalProduct} from "../../models/rental-product";
@@ -20,6 +20,8 @@ const RentalProductWidget = ({product}: ProductDetailsWidgetProps) => {
         short_term_rate: 0,
         medium_term_rate: 0,
         long_term_rate: 0,
+        rentPlace: "",
+        returnPlace: ""
     })
 
     const {data: rentalInfo, isLoading, refetch} = useAdminCustomQuery<{ rental_product: RentalProduct}>(
@@ -32,6 +34,19 @@ const RentalProductWidget = ({product}: ProductDetailsWidgetProps) => {
         `/admin/rental-products/product/${product.id}`,
         ["rental_product", product.id]
     )
+
+    useEffect(() => {
+        if (rentalInfo && rentalInfo.rental_product) {
+            setRentalData({
+                short_term_rate: rentalInfo.rental_product.short_term_rate,
+                medium_term_rate: rentalInfo.rental_product.medium_term_rate,
+                long_term_rate: rentalInfo.rental_product.long_term_rate,
+                rentPlace: rentalInfo.rental_product.rentPlace || "",
+                returnPlace: rentalInfo.rental_product.returnPlace || ""
+            })
+        }
+    }, [rentalInfo])
+
 
     const handleUpdate = () => {
         updateRentalInfo(rentalData, {
@@ -95,6 +110,22 @@ const RentalProductWidget = ({product}: ProductDetailsWidgetProps) => {
                             onChange={(e) => setRentalData({...rentalData, long_term_rate: Number(e.target.value)})}
                         />
                     </div>
+                    <div>
+                        <Label htmlFor="rent-place">Rent Place</Label>
+                        <Textarea
+                            id="rent-place"
+                            value={rentalData.rentPlace}
+                            onChange={(e) => setRentalData({...rentalData, rentPlace: e.target.value})}
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="return-place">Return Place</Label>
+                        <Textarea
+                            id="return-place"
+                            value={rentalData.returnPlace}
+                            onChange={(e) => setRentalData({...rentalData, returnPlace: e.target.value})}
+                        />
+                    </div>
                     <Button
                         variant="primary"
                         size="small"
@@ -122,6 +153,8 @@ const RentalProductWidget = ({product}: ProductDetailsWidgetProps) => {
                 <Text>Short Term Rate: {rental_product.short_term_rate}</Text>
                 <Text>Medium Term Rate: {rental_product.medium_term_rate}</Text>
                 <Text>Long Term Rate: {rental_product.long_term_rate}</Text>
+                <Text>Rent Place: {rental_product.rentPlace}</Text>
+                <Text>Return Place: {rental_product.returnPlace}</Text>
             </div>
             <Button
                 variant="secondary"

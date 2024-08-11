@@ -1,5 +1,4 @@
-// src/admin/routes/rental-products/register/[productId]/page.tsx
-import {useNavigate, useParams} from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { useAdminProduct, useAdminCustomPost } from "medusa-react"
 import { useState } from "react"
 import {
@@ -8,12 +7,12 @@ import {
     Heading,
     Label,
     Input,
-    Text
+    Text,
+    Textarea
 } from "@medusajs/ui"
-import {RouteConfig} from "@medusajs/admin";
-import {Product} from "@medusajs/medusa";
+import { RouteConfig } from "@medusajs/admin"
+import { Product } from "@medusajs/medusa"
 
-// RentalProduct 타입 정의 추가
 type RentalProduct = {
     id: string;
     product_id: string;
@@ -26,6 +25,8 @@ type RentalProduct = {
         medium_term: { min: number; max: number };
         long_term: { min: number };
     };
+    rentPlace: string;
+    returnPlace: string;
 }
 
 const RegisterRentalProductPage = () => {
@@ -39,7 +40,9 @@ const RegisterRentalProductPage = () => {
             short_term: { min: 1, max: 7 },
             medium_term: { min: 8, max: 30 },
             long_term: { min: 31 },
-        }
+        },
+        rentPlace: "",
+        returnPlace: ""
     })
 
     const navigate = useNavigate()
@@ -55,7 +58,6 @@ const RegisterRentalProductPage = () => {
             ...rentalData
         }, {
             onSuccess: () => {
-                // Redirect to product detail page
                 navigate(`/a/products/${productId}`)
             }
         })
@@ -93,6 +95,22 @@ const RegisterRentalProductPage = () => {
                         type="number"
                         value={rentalData.long_term_rate}
                         onChange={(e) => setRentalData({...rentalData, long_term_rate: Number(e.target.value)})}
+                    />
+                </div>
+                <div>
+                    <Label htmlFor="rent-place">Rent Place</Label>
+                    <Textarea
+                        id="rent-place"
+                        value={rentalData.rentPlace}
+                        onChange={(e) => setRentalData({...rentalData, rentPlace: e.target.value})}
+                    />
+                </div>
+                <div>
+                    <Label htmlFor="return-place">Return Place</Label>
+                    <Textarea
+                        id="return-place"
+                        value={rentalData.returnPlace}
+                        onChange={(e) => setRentalData({...rentalData, returnPlace: e.target.value})}
                     />
                 </div>
                 <Button
