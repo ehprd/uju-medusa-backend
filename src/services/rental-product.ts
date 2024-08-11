@@ -22,6 +22,15 @@ class RentalProductService extends TransactionBaseService {
         this.productService_ = container.productService
     }
 
+    async findByProductId(productId: string): Promise<RentalProduct | undefined> {
+        const rentalProductRepo = this.manager_.getRepository(RentalProduct)
+
+        return await rentalProductRepo.findOne({
+            where: { product_id: productId },
+            relations: ["product"] // product 관계를 포함하여 가져옵니다.
+        })
+    }
+
     async list(
         selector: RentalProductSelector = {},
         config: FindConfig<RentalProduct> = { relations: [], skip: 0, take: 20 }
