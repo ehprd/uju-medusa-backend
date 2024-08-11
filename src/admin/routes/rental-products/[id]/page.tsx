@@ -114,10 +114,4 @@ const RentalProductDetailPage = () => {
     )
 }
 
-export const config: RouteConfig = {
-    link: {
-        label: "Rental Product Detail",
-    },
-}
-
 export default RentalProductDetailPage

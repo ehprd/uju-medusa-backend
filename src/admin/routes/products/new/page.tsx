@@ -162,10 +162,4 @@ const NewProduct = () => {
     )
 }
 
-export const config: RouteConfig = {
-    link: {
-        label: "Create Product",
-    },
-}
-
 export default NewProduct

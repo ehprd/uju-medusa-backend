@@ -9,7 +9,7 @@ import React, {useState} from "react"
 import {Table, Button, Container, Heading} from "@medusajs/ui"
 import {RouteConfig} from "@medusajs/admin";
 import {Product} from "@medusajs/medusa";
-import {Link} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 
 type CreateProductData = {
     title: string
@@ -49,74 +49,11 @@ type RentalProductItemProps = {
 };
 
 const RentalProductsPage = () => {
-
-    const [showCreateForm, setShowCreateForm] = useState(false)
-    const [rentalProductData, setRentalProductData] = useState({
-        title: "",
-        short_term_rate: 0,
-        medium_term_rate: 0,
-        long_term_rate: 0,
-        rental_periods: {
-            short_term: {min: 1, max: 7},
-            medium_term: {min: 8, max: 30},
-            long_term: {min: 31},
-        },
-    })
-
-    const {products, refetch: refetchProducts} = useAdminProducts()
-    const {data, isLoading, refetch} = useAdminCustomQuery<{ rental_products: RentalProduct[] }>(
+    const navigate = useNavigate()
+    const { data, isLoading } = useAdminCustomQuery<{ rental_products: RentalProduct[] }>(
         `/admin/rental-products`,
         ["admin_rental_products"]
     )
-
-    const {mutate: createProduct, isLoading: isCreatingProduct} = useAdminCreateProduct()
-
-    const {mutate: createRentalProduct, isLoading: isCreatingRentalProduct} = useAdminCustomPost(
-        `/admin/rental-products`,
-        ["admin_rental_products"]
-    )
-
-    const handleCreateRentalProduct = () => {
-        createProduct(
-            {
-                title: rentalProductData.title,
-                handle: rentalProductData.title.toLowerCase().replace(/ /g, "-"),
-                description: "Generated with Rental Product",
-                type: {value: "rental"},
-                variants: [],
-                options: [],
-                is_giftcard: false, discountable: false, collection_id: null, categories: [], tags: []
-            },
-            {
-                onSuccess: (data) => {
-                    createRentalProduct(
-                        {
-                            product_id: data.product.id,
-                            ...rentalProductData,
-                        },
-                        {
-                            onSuccess: () => {
-                                refetch()
-                                refetchProducts()
-                                setShowCreateForm(false)
-                                setRentalProductData({
-                                    title: "",
-                                    short_term_rate: 0,
-                                    medium_term_rate: 0,
-                                    long_term_rate: 0,
-                                    rental_periods: {
-                                        short_term: {min: 1, max: 7},
-                                        medium_term: {min: 8, max: 30},
-                                        long_term: {min: 31},
-                                    },
-                                })
-                            },
-                        }
-                    )
-                },
-            }
-        )
-    }
 
     if (isLoading) return <div>Loading...</div>
 
@@ -124,77 +61,16 @@ const RentalProductsPage = () => {
 
     return (
         <div className="p-8">
-            <h1 className="text-2xl font-bold mb-4">Rental Products</h1>
-
-            {!showCreateForm ? (
+            <div className="flex justify-between items-center mb-4">
+                <h1 className="text-2xl font-bold">Rental Products</h1>
                 <Button
                     variant="primary"
                     size="small"
-                    onClick={() => setShowCreateForm(true)}
-                    className="mb-4"
+                    onClick={() => navigate("/a/products/new")}
                 >
                     Create Rental Product
                 </Button>
-            ) : (
-                <div className="mb-4">
-                    <input
-                        type="text"
-                        value={rentalProductData.title}
-                        onChange={(e) => setRentalProductData({
-                            ...rentalProductData,
-                            title: e.target.value
-                        })}
-                        className="mr-2 p-2 border rounded"
-                        placeholder="Product Title"
-                    />
-                    <input
-                        type="number"
-                        value={rentalProductData.short_term_rate}
-                        onChange={(e) => setRentalProductData({
-                            ...rentalProductData,
-                            short_term_rate: parseInt(e.target.value)
-                        })}
-                        className="mr-2 p-2 border rounded"
-                        placeholder="Short Term Rate"
-                    />
-                    <input
-                        type="number"
-                        value={rentalProductData.medium_term_rate}
-                        onChange={(e) => setRentalProductData({
-                            ...rentalProductData,
-                            medium_term_rate: parseInt(e.target.value)
-                        })}
-                        className="mr-2 p-2 border rounded"
-                        placeholder="Medium Term Rate"
-                    />
-                    <input
-                        type="number"
-                        value={rentalProductData.long_term_rate}
-                        onChange={(e) => setRentalProductData({
-                            ...rentalProductData,
-                            long_term_rate: parseInt(e.target.value)
-                        })}
-                        className="mr-2 p-2 border rounded"
-                        placeholder="Long Term Rate"
-                    />
-                    <Button
-                        variant="primary"
-                        size="small"
-                        onClick={handleCreateRentalProduct}
-                        disabled={isCreatingProduct || isCreatingRentalProduct || !rentalProductData.title}
-                        className="mr-2"
-                    >
-                        Create
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        size="small"
-                        onClick={() => setShowCreateForm(false)}
-                    >
-                        Cancel
-                    </Button>
-                </div>
-            )}
+            </div>
 
             {rentalProducts.length > 0 ? (
                 <Table>
@@ -223,6 +99,7 @@ const RentalProductsPage = () => {
         </div>
     )
 }
+
 
 const RentalProductItem: React.FC<RentalProductItemProps> = ({ rentalProduct }) => {
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
