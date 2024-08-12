@@ -42,19 +42,35 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
             case CreateLineItemSteps.STARTED: {
                 try {
                     const cartId = id
-                    const data = {
-                        customer_id: customerId,
-                        metadata: validated.metadata,
-                        quantity: validated.quantity,
-                        variant_id: validated.variant_id,
-                    }
+                    if(validated.metadata?.rentPlace) {
+                        const data = {
+                            customer_id: customerId,
+                            metadata: validated.metadata,
+                            quantity: validated.quantity,
+                            variant_id: validated.variant_id,
+                        }
 
-                    await addOrUpdateLineItem({
-                        cartId,
-                        container: req.scope,
-                        manager,
-                        data,
-                    })
+                        await addOrUpdateRentalLineItem({
+                            cartId,
+                            container: req.scope,
+                            manager,
+                            data,
+                        })
+                    } else {
+                        const data = {
+                            customer_id: customerId,
+                            metadata: validated.metadata,
+                            quantity: validated.quantity,
+                            variant_id: validated.variant_id,
+                        }
+
+                        await addOrUpdateLineItem({
+                            cartId,
+                            container: req.scope,
+                            manager,
+                            data,
+                        })
+                    }
 
                     idempotencyKey = await idempotencyKeyService
                         .withTransaction(manager)
@@ -192,8 +208,62 @@ export async function addOrUpdateLineItem(
             metadata: data.metadata,
         })
 
-    // line.unit_price = 123345
-    // line.quantity = 11
+    await manager.transaction(async (transactionManager) => {
+        const txCartService = cartService.withTransaction(transactionManager)
+
+        await txCartService.addOrUpdateLineItems(cart.id, line, {
+            validateSalesChannels:
+                featureFlagRouter.isFeatureEnabled("sales_channels"),
+        })
+    })
+}
+
+export async function  addOrUpdateRentalLineItem(
+    {
+        cartId,
+        container,
+        manager,
+        data,
+    }
+) {
+    const cartService: CartService = container.resolve("cartService")
+    const lineItemService: LineItemService = container.resolve("lineItemService")
+    const productVariantService = container.resolve("productVariantService")
+    const productService = container.resolve("productService")
+
+    const variant = await productVariantService.retrieve(data.variant_id)
+
+    const product = productService.retrieve(variant.product_id, {
+        select: ["variant"],
+    })
+
+    const startDate = new Date(data.metadata.rentPlace.startDate)
+    const endDate = new Date(data.metadata.rentPlace.endDate)
+
+    if(variant.title === "Daily Rental") {
+        data.quantity = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+        if(data.quantity > 2) {
+            const weeklyVariant = await productVariantService.find(
+                {
+                    title: "Weekly Rental",
+                    product_id: product.id
+                }
+            )
+            data.variant_id = weeklyVariant.id
+        }
+    } else if(variant.title === "Monthly Rental") {
+        data.quantity = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24) / 30)
+    }
+    const cart = await cartService.retrieve(cartId, {
+        select: ["id", "region_id", "customer_id"],
+    })
+
+    const line: LineItem = await lineItemService
+        .withTransaction(manager)
+        .generate(data.variant_id, cart.region_id, data.quantity, {
+            customer_id: data.customer_id || cart.customer_id,
+            metadata: data.metadata,
+        })
 
     await manager.transaction(async (transactionManager) => {
         const txCartService = cartService.withTransaction(transactionManager)
