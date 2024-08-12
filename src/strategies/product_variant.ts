@@ -50,19 +50,7 @@ export default class MyStrategy extends PriceSelectionStrategy {
 
         if (rentalProduct) {
             const prices = await super.calculateVariantPrice(data, context)
-
-            console.log(rentalProduct)
-            console.log("RENTAL")
-            console.log(prices)
-            try {
-                console.log(prices.get(data[0].variantId).prices)
-                console.log(prices)
-            } catch {
-
-            }
-
             return prices
-
         } else {
             return await super.calculateVariantPrice(data, context)
         }
